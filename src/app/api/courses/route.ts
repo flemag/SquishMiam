@@ -15,6 +15,9 @@ export async function POST(req: Request) {
   }
 
   const debut = new Date(weekStart);
+  if (isNaN(debut.getTime())) {
+    return NextResponse.json({ error: "Date invalide" }, { status: 400 });
+  }
   const fin = new Date(debut);
   fin.setUTCDate(fin.getUTCDate() + 7);
 

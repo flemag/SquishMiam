@@ -14,7 +14,9 @@ export default async function PlanPage({
   if (!userId) redirect("/connexion");
 
   const { semaine } = await searchParams;
-  const ref = semaine && /^\d{4}-\d{2}-\d{2}$/.test(semaine) ? new Date(semaine) : new Date();
+  const paramsValides =
+    semaine && /^\d{4}-\d{2}-\d{2}$/.test(semaine) && !isNaN(new Date(semaine).getTime());
+  const ref = paramsValides ? new Date(semaine) : new Date();
   const dates = getWeekDates(ref);
   const debut = weekStart(ref);
   const fin = new Date(debut);

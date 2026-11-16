@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import MiamzStatuette from "@/components/miamz-statuette";
 
 const LIENS = [
@@ -34,6 +35,13 @@ export default function NavBar() {
               </Link>
             );
           })}
+          <button
+            onClick={() => signOut({ callbackUrl: "/connexion" })}
+            className="ml-2 rounded-full px-3 py-2 text-sm text-gray-400 transition hover:bg-[#FFB5C2]/25 hover:text-[#B0413E]"
+            title="Se déconnecter"
+          >
+            Déconnexion
+          </button>
         </nav>
       </div>
     </header>

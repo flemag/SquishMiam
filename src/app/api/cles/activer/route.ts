@@ -22,8 +22,9 @@ export async function POST(req: Request) {
   }
 
   const now = new Date();
-  await db.licenseKey.update({
-    where: { id: key.id },
+  // updateMany conditionnel : seule une clé encore UNUSED passe (pas de course perdue)
+  const res = await db.licenseKey.updateMany({
+    where: { id: key.id, status: "UNUSED" },
     data: {
       status: "ACTIVE",
       activatedAt: now,
@@ -31,6 +32,9 @@ export async function POST(req: Request) {
       activatedById: userId,
     },
   });
+  if (res.count === 0) {
+    return NextResponse.json({ error: "Clé inconnue ou déjà utilisée" }, { status: 409 });
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -4,12 +4,12 @@
  */
 export const RAYONS = [
   "Fruits & légumes",
-  "Boulangerie",
   "Crémerie",
   "Viandes & poissons",
+  "Boulangerie",
   "Surgelés",
-  "Épicerie",
   "Boissons",
+  "Épicerie",
   "Hygiène",
 ] as const;
 
@@ -23,10 +23,10 @@ const MOTS_CLES: Record<Rayon, string[]> = {
     "céleri", "poireau", "navet", "potiron", "butternut", "haricot vert", "petit pois",
     "maïs", "basilic", "persil", "ciboulette", "menthe", "coriandre", "gingembre",
   ],
-  Boulangerie: ["pain", "baguette", "brioche", "tortilla", "naan", "pita", " chapelure"],
+  Boulangerie: ["pain", "baguette", "brioche", "tortilla", "naan", "pita", "chapelure"],
   Crémerie: [
     "lait", "beurre", "crème", "yaourt", "fromage", "gruyère", "emmental", "mozzarella",
-    "parmesan", "feta", "chèvre", "œuf", "oeuf", "ricotta", "mascarpone", "kiri", "levure",
+    "parmesan", "feta", "chèvre", "œuf", "oeuf", "ricotta", "mascarpone", "kiri",
   ],
   "Viandes & poissons": [
     "poulet", "boeuf", "bœuf", "veau", "porc", "agneau", "dinde", "canard", "saucisse",

@@ -15,12 +15,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const body = await req.json().catch(() => ({}));
   const data: { date?: Date; slot?: "DEJEUNER" | "DINER"; servings?: number; recipeId?: string } = {};
-  if (typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date)) data.date = new Date(body.date);
+  if (typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) && !isNaN(new Date(body.date).getTime())) {
+    data.date = new Date(body.date);
+  }
   if (body.slot === "DEJEUNER" || body.slot === "DINER") data.slot = body.slot;
-  if (Number.isInteger(Number(body.servings)) && Number(body.servings) >= 1) {
+  if (Number.isInteger(Number(body.servings)) && Number(body.servings) >= 1 && Number(body.servings) <= 12) {
     data.servings = Number(body.servings);
   }
-  if (typeof body.recipeId === "string") data.recipeId = body.recipeId;
+  if (typeof body.recipeId === "string") {
+    // La recette de remplacement doit appartenir à l'utilisateur (même règle que POST).
+    const recipe = await db.recipe.findFirst({ where: { id: body.recipeId, createdById: userId } });
+    if (!recipe) return NextResponse.json({ error: "Recette introuvable" }, { status: 404 });
+    data.recipeId = body.recipeId;
+  }
 
   try {
     const entry = await db.mealPlanEntry.update({ where: { id }, data });

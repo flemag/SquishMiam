@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mapToRayon, scaleQuantity, aggregateGroceries, formatQuantite } from "@/lib/courses";
+import { RAYONS } from "@/lib/rayons";
 
 describe("mapToRayon", () => {
   it("classe les ingrédients courants", () => {
@@ -49,11 +50,30 @@ describe("aggregateGroceries", () => {
     expect(flat).toHaveLength(1);
     expect(flat[0].quantite).toBe(6);
   });
+
+  it("fusionne quantité manquante + quantité chiffrée sans perte", () => {
+    const result = aggregateGroceries([
+      { recipe: { servings: 2, ingredients: [{ nom: "Sel", unite: "g" }] }, servings: 2 },
+      { recipe: { servings: 2, ingredients: [{ nom: "Sel", quantite: 5, unite: "g" }] }, servings: 2 },
+    ]);
+    const flat = result.flatMap((r) => r.items);
+    expect(flat).toHaveLength(1);
+    expect(flat[0].quantite).toBe(5);
+  });
 });
 
 describe("formatQuantite", () => {
   it("affiche à la française", () => {
     expect(formatQuantite(2.25, "kg")).toBe("2,25 kg");
     expect(formatQuantite(6, "pièce")).toBe("6 pièce");
+  });
+});
+
+describe("RAYONS", () => {
+  it("suit l'ordre du dictionnaire du plan", () => {
+    expect(RAYONS[0]).toBe("Fruits & légumes");
+    expect(RAYONS[1]).toBe("Crémerie");
+    expect(RAYONS[2]).toBe("Viandes & poissons");
+    expect(RAYONS[3]).toBe("Boulangerie");
   });
 });

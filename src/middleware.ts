@@ -31,12 +31,28 @@ export default auth(async (req) => {
   }
 
   const decision = routeGuard(pathname, ctx);
-  if (!decision.allow && decision.redirectTo) {
-    return NextResponse.redirect(new URL(decision.redirectTo, req.url));
+  if (!decision.allow) {
+    // Les API répondent en JSON (une redirection HTML corromprait le fetch côté client).
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: ctx.hasSession ? "Accès refusé" : "Non authentifié" },
+        { status: ctx.hasSession ? 403 : 401 }
+      );
+    }
+    return NextResponse.redirect(new URL(decision.redirectTo!, req.url));
   }
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/plan/:path*", "/recettes/:path*", "/courses/:path*", "/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/plan/:path*",
+    "/recettes/:path*",
+    "/courses/:path*",
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/recipes/:path*",
+    "/api/plan/:path*",
+    "/api/courses/:path*",
+  ],
 };

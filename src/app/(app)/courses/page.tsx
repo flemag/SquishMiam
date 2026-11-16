@@ -16,7 +16,9 @@ export default async function CoursesPage({
   if (!userId) redirect("/connexion");
 
   const { semaine } = await searchParams;
-  const ref = semaine && /^\d{4}-\d{2}-\d{2}$/.test(semaine) ? new Date(semaine) : new Date();
+  const paramsValides =
+    semaine && /^\d{4}-\d{2}-\d{2}$/.test(semaine) && !isNaN(new Date(semaine).getTime());
+  const ref = paramsValides ? new Date(semaine) : new Date();
   const debut = weekStart(ref);
   const dates = getWeekDates(debut);
 
@@ -73,7 +75,8 @@ export default async function CoursesPage({
           items: g.items.map((i) => ({
             id: i.id,
             nom: i.nom,
-            affichage: i.quantite !== null ? formatQuantite(i.quantite, i.unite) : i.nom,
+            affichage:
+              i.quantite !== null ? `${i.nom} · ${formatQuantite(i.quantite, i.unite)}` : i.nom,
             checked: i.checked,
           })),
         }))}

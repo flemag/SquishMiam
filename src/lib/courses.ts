@@ -16,8 +16,11 @@ export type GroupeRayon = {
 };
 
 export function scaleQuantity(quantite: number, baseServings: number, targetServings: number): number {
-  const ratio = targetServings / baseServings;
-  return Math.round(quantite * ratio * 100) / 100;
+  return arrondi2(quantite * (targetServings / baseServings));
+}
+
+function arrondi2(v: number): number {
+  return Math.round(v * 100) / 100;
 }
 
 export function aggregateGroceries(entries: EntreePlanAvecRecette[]): GroupeRayon[] {
@@ -31,13 +34,16 @@ export function aggregateGroceries(entries: EntreePlanAvecRecette[]): GroupeRayo
       if (!nom) continue;
       const unite = ing.unite?.trim() || null;
       const cle = `${nom.toLowerCase()}|${unite ?? ""}`;
-      const quantite =
-        ing.quantite !== undefined ? Math.round(ing.quantite * ratio * 100) / 100 : null;
+      const quantite = ing.quantite !== undefined ? arrondi2(ing.quantite * ratio) : null;
 
       const existant = fusion.get(cle);
-      if (existant && quantite !== null && existant.quantite !== null) {
-        existant.quantite = Math.round((existant.quantite + quantite) * 100) / 100;
-      } else if (!existant) {
+      if (existant) {
+        // "1 pincée" (sans quantité) + "5 g" → 5 g ; deux sans quantité → reste sans quantité
+        existant.quantite =
+          existant.quantite === null && quantite === null
+            ? null
+            : arrondi2((existant.quantite ?? 0) + (quantite ?? 0));
+      } else {
         fusion.set(cle, {
           nom,
           quantite,
