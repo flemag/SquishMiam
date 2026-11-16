@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+/*
+ * Palette Miamz (contraintes globales du design doc).
+ * Utilise ces variables plutôt que des valeurs brutes.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --miamz-rose: #ffb5c2;
+  --miamz-menthe: #a8e6cf;
+  --miamz-creme: #fff9e6;
+  --miamz-lilas: #c9b6e4;
+  --miamz-vert: #4a6741;
+  --miamz-corail: #e07a5f;
+
+  --background: var(--miamz-creme);
+  --foreground: #3a2e2e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-miamz-rose: var(--miamz-rose);
+  --color-miamz-menthe: var(--miamz-menthe);
+  --color-miamz-creme: var(--miamz-creme);
+  --color-miamz-lilas: var(--miamz-lilas);
+  --color-miamz-vert: var(--miamz-vert);
+  --color-miamz-corail: var(--miamz-corail);
+  --font-sans: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * Unique animation autorisée pour la statuette : un clignement lent et léger.
+ */
+@keyframes miamz-blink {
+  0%, 92%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+.miamz-yeux {
+  animation: miamz-blink 4.5s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
 }

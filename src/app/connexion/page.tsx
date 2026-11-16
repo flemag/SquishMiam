@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import MiamzStatuette from "@/components/miamz-statuette";
 
 function ConnexionContent() {
   const router = useRouter();
@@ -43,7 +44,9 @@ function ConnexionContent() {
     <main className="flex min-h-screen items-center justify-center bg-[#FFF9E6] px-4">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-lg shadow-[#FFB5C2]/20">
         <div className="mb-6 text-center">
-          <div className="text-5xl">🍙</div>
+          <div className="flex justify-center">
+            <MiamzStatuette size={72} />
+          </div>
           <h1 className="mt-3 text-3xl font-semibold text-[#4A6741]">Miamz</h1>
           <p className="mt-1 text-sm text-gray-500">Ton compagnon repas. Bien manger, sans charge mentale.</p>
         </div>

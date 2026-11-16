@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import MiamzStatuette from "@/components/miamz-statuette";
 
 const LIENS = [
   { href: "/plan", label: "Plan" },
@@ -16,7 +17,7 @@ export default function NavBar() {
     <header className="sticky top-0 z-10 border-b border-[#4A6741]/10 bg-[#FFF9E6]/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/plan" className="flex items-center gap-2 text-lg font-semibold text-[#4A6741]">
-          <span className="text-2xl">🍙</span> Miamz
+          <MiamzStatuette size={34} /> Miamz
         </Link>
         <nav className="flex items-center gap-1">
           {LIENS.map((lien) => {
