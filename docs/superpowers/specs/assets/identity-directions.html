@@ -1,0 +1,92 @@
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;800&family=Lilita+One&family=Poppins:wght@400;600&family=Bree+Serif&display=swap" rel="stylesheet">
+
+<h2>Quelle identité pour ton app ?</h2>
+<p class="subtitle">4 directions complètes : nom de l'app, ambiance graphique, et caractère de la mascotte. Clique celle qui te parle le plus — on pourra mixer ensuite. Le dessin final de la mascotte sera généré en vraie illustration une fois la direction choisie.</p>
+
+<div class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+
+  <div class="card" data-choice="A-pousse" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;background:linear-gradient(160deg,#F7F3E8 0%,#E8E0CC 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+      <div style="font-size:64px;line-height:1;">🥕</div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:26px;color:#4A6741;">Pousse</div>
+      <div style="font-family:'Nunito',sans-serif;font-size:13px;color:#8A7A5C;">« Fais grandir tes repas. »</div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#4A6741;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#E07A5F;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#F2E8CF;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#8A7A5C;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Le potager chaleureux</h3>
+      <p><b>Mascotte : Caro la carotte</b>, gardienne de ton jardin virtuel. Douce, encourageante, un peu maternelle. Elle célèbre tes victoires et console après un fast-food.</p>
+      <p style="margin-top:8px;font-style:italic;color:#666;">« Bravo ! Tes courgettes sont devenues une soupe, ton jardin fleurit 🌱 »</p>
+      <p style="margin-top:8px;"><b>Ambiance :</b> crème, vert sauge, terracotta. Cozy, familial, anti-stress. Lié au jardin virtuel qui pousse.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B-cuistot" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;background:linear-gradient(160deg,#2B2B2B 0%,#1F1F1F 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+      <div style="font-size:64px;line-height:1;">👨‍🍳</div>
+      <div style="font-family:'Lilita One',cursive;font-size:26px;color:#F4B942;">Cuistot</div>
+      <div style="font-family:'Nunito',sans-serif;font-size:13px;color:#DDD;">« Le chef, c'est toi. »</div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#D64541;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#F4B942;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#FFFFFF;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#2B2B2B;border:1px solid #555;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Le chef complice</h3>
+      <p><b>Mascotte : Rémi le petit chef</b> à la moustache. Blagueur, exigeant mais bienveillant, esprit plateau télé. Te note entre amis.</p>
+      <p style="margin-top:8px;font-style:italic;color:#666;">« Pâtes trois soirs de suite ? On se voit, là ? 😏 »</p>
+      <p style="margin-top:8px;"><b>Ambiance :</b> ardoise craie, rouge tomate, jaune œuf. Énergie de bistrot, humour de cuisine.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="C-mia" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;background:linear-gradient(160deg,#1E2A44 0%,#3A2E5C 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+      <div style="font-size:64px;line-height:1;">🍐</div>
+      <div style="font-family:'Poppins',sans-serif;font-weight:600;font-size:26px;color:#7FE8C3;">Mia</div>
+      <div style="font-family:'Poppins',sans-serif;font-size:13px;color:#B8BFD9;">« Ta compagne repas. »</div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#1E2A44;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#7FE8C3;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#9D8DF1;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#FFFFFF;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — La compagne bienveillante</h3>
+      <p><b>Mascotte : Mia, une poire-robot</b> aux yeux doux. L'app <i>est</i> la mascotte — comme Siri ou Duolingo, tu parles à Mia. Analytique mais chaleureuse.</p>
+      <p style="margin-top:8px;font-style:italic;color:#666;">« Ton rapport de la semaine : −12 € de gaspillage, 4 repas veggie. Je suis fière de nous. ✨ »</p>
+      <p style="margin-top:8px;"><b>Ambiance :</b> bleu nuit, menthe, violet doux. Tech calme, wellness, premium.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="D-fricote" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;background:linear-gradient(160deg,#F3E9D2 0%,#EAD7B7 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-bottom:6px solid #2D5A3D;">
+      <div style="font-size:64px;line-height:1;">🥚</div>
+      <div style="font-family:'Bree Serif',serif;font-size:26px;color:#2D5A3D;">Fricote</div>
+      <div style="font-family:'Bree Serif',serif;font-size:13px;color:#8B5E34;">« Bien manger, comme au marché. »</div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:#2D5A3D;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#C0392B;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#F3E9D2;border:1px solid #C8B896;"></div>
+        <div style="width:28px;height:28px;border-radius:50%;background:#8B5E34;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>D — L'épicerie rétro</h3>
+      <p><b>Mascotte : Cocotte la poule</b> (ou l'œuf). Japonaise du marché, malicieuse, cache des œufs-surprises (badges) dans l'app.</p>
+      <p style="margin-top:8px;font-style:italic;color:#666;">« Cocotte t'a pondu un badge : 3 semaines sans gaspillage ! 🥚 »</p>
+      <p style="margin-top:8px;"><b>Ambiance :</b> kraft, vert bouteille, étiquettes vintage. Authentique, marché, charmant.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <p class="subtitle">Mon instinct : <b>C (Mia)</b> pour le lien unique avec la mascotte — c'est le meilleur potentiel de démarcation — ou <b>A (Pousse)</b> si tu veux la version la plus cozy. Mais c'est toi qui regarde l'app tous les jours 😉</p>
+</div>
