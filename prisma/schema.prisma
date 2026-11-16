@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  image        String?
+  role         Role     @default(USER)
+  licenseKeys  LicenseKey[] @relation("activatedBy")
+  recipes      Recipe[]
+  mealPlan     MealPlanEntry[]
+  groceryItems GroceryListItem[]
+  accounts     Account[]
+  sessions     Session[]
+  createdAt    DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model LicenseKey {
+  id            String        @id @default(cuid())
+  code          String        @unique
+  durationDays  Int? // null = illimitée
+  status        LicenseStatus @default(UNUSED)
+  activatedAt   DateTime?
+  expiresAt     DateTime?
+  activatedById String?
+  activatedBy   User?         @relation("activatedBy", fields: [activatedById], references: [id])
+  createdAt     DateTime      @default(now())
+}
+
+enum LicenseStatus {
+  UNUSED
+  ACTIVE
+  REVOKED
+}
+
+model Recipe {
+  id          String          @id @default(cuid())
+  title       String
+  servings    Int             @default(2)
+  minutes     Int?
+  tags        String[]
+  ingredients Json // [{ nom: string, quantite?: number, unite?: string }]
+  steps       String[]
+  createdById String
+  createdBy   User            @relation(fields: [createdById], references: [id])
+  entries     MealPlanEntry[]
+  createdAt   DateTime        @default(now())
+}
+
+model MealPlanEntry {
+  id       String   @id @default(cuid())
+  date     DateTime @db.Date
+  slot     MealSlot
+  servings Int      @default(2)
+  recipeId String
+  recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ownerId  String
+  owner    User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, date, slot])
+}
+
+enum MealSlot {
+  DEJEUNER
+  DINER
+}
+
+model GroceryListItem {
+  id        String   @id @default(cuid())
+  nom       String
+  quantite  Float?
+  unite     String?
+  rayon     String
+  checked   Boolean  @default(false)
+  weekStart DateTime @db.Date
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, weekStart, nom, unite])
+}
+
+// Modèles standards de l'adaptateur Auth.js (@auth/prisma-adapter)
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
