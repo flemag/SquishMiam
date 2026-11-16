@@ -1,0 +1,173 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+const UNITES = ["g", "kg", "ml", "cl", "l", "pièce", "boîte"];
+
+type LigneIngredient = { nom: string; quantite: string; unite: string };
+
+export default function NouvelleRecettePage() {
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [servings, setServings] = useState(2);
+  const [minutes, setMinutes] = useState("");
+  const [tags, setTags] = useState("");
+  const [ingredients, setIngredients] = useState<LigneIngredient[]>([
+    { nom: "", quantite: "", unite: "g" },
+  ]);
+  const [steps, setSteps] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [enCours, setEnCours] = useState(false);
+
+  function ligne(index: number, champ: Partial<LigneIngredient>) {
+    setIngredients((lignes) => lignes.map((l, i) => (i === index ? { ...l, ...champ } : l)));
+  }
+
+  async function enregistrer() {
+    const ingredientsParses = ingredients
+      .filter((l) => l.nom.trim())
+      .map((l) => ({
+        nom: l.nom.trim(),
+        quantite: l.quantite ? Number(l.quantite.replace(",", ".")) : undefined,
+        unite: l.unite || undefined,
+      }));
+
+    setEnCours(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          servings,
+          minutes: minutes ? Number(minutes) : undefined,
+          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+          ingredients: ingredientsParses,
+          steps: steps.split("\n").map((s) => s.trim()).filter(Boolean),
+        }),
+      });
+      if (res.ok) {
+        router.push("/recettes");
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMessage(data.error ?? "Recette invalide — vérifie les champs.");
+      }
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl">
+      <h1 className="mb-6 text-2xl font-semibold text-[#4A6741]">Nouvelle recette</h1>
+
+      <div className="flex flex-col gap-5 rounded-3xl bg-white p-6 shadow-sm">
+        <label className="flex flex-col gap-1 text-sm text-gray-600">
+          Titre
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Gratin de courgettes"
+            className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+          />
+        </label>
+
+        <div className="flex gap-4">
+          <label className="flex flex-1 flex-col gap-1 text-sm text-gray-600">
+            Portions
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={servings}
+              onChange={(e) => setServings(Number(e.target.value))}
+              className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+            />
+          </label>
+          <label className="flex flex-1 flex-col gap-1 text-sm text-gray-600">
+            Minutes
+            <input
+              type="number"
+              min={1}
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              placeholder="30"
+              className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+            />
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-1 text-sm text-gray-600">
+          Tags (séparés par des virgules)
+          <input
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="végé, rapide, familial"
+            className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+          />
+        </label>
+
+        <div className="flex flex-col gap-2 text-sm text-gray-600">
+          Ingrédients
+          {ingredients.map((l, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                value={l.nom}
+                onChange={(e) => ligne(i, { nom: e.target.value })}
+                placeholder="Courgettes"
+                className="flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+              />
+              <input
+                value={l.quantite}
+                onChange={(e) => ligne(i, { quantite: e.target.value })}
+                placeholder="500"
+                className="w-20 rounded-2xl border border-gray-200 px-3 py-2.5 text-center outline-none focus:border-[#A8E6CF]"
+              />
+              <select
+                value={l.unite}
+                onChange={(e) => ligne(i, { unite: e.target.value })}
+                className="rounded-2xl border border-gray-200 px-2 py-2.5 outline-none focus:border-[#A8E6CF]"
+              >
+                {UNITES.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+          <button
+            onClick={() => setIngredients((l) => [...l, { nom: "", quantite: "", unite: "g" }])}
+            className="self-start rounded-full px-3 py-1.5 text-sm text-[#4A6741] hover:bg-[#A8E6CF]/30"
+          >
+            + Ajouter un ingrédient
+          </button>
+        </div>
+
+        <label className="flex flex-col gap-1 text-sm text-gray-600">
+          Étapes (une par ligne)
+          <textarea
+            value={steps}
+            onChange={(e) => setSteps(e.target.value)}
+            rows={4}
+            placeholder={"Préchauffer le four…\nMélanger…"}
+            className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+          />
+        </label>
+
+        {message && <p className="text-sm text-[#B0413E]">{message}</p>}
+
+        <button
+          onClick={enregistrer}
+          disabled={enCours}
+          className="rounded-full bg-[#4A6741] px-5 py-3 font-medium text-white transition hover:bg-[#3d5535] disabled:opacity-50"
+        >
+          {enCours ? "Enregistrement…" : "Enregistrer la recette"}
+        </button>
+      </div>
+    </main>
+  );
+}
