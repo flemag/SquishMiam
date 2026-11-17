@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMiamz } from "@/components/miamz/fournisseur";
 
 type EntryVue = {
   id: string;
@@ -28,6 +29,7 @@ export default function GrillePlan({
   recipes: RecetteChoix[];
 }) {
   const router = useRouter();
+  const { emettre } = useMiamz();
   const [caseActive, setCaseActive] = useState<{ date: string; slot: string } | null>(null);
   const [recetteChoisie, setRecetteChoisie] = useState(recipes[0]?.id ?? "");
   const [servings, setServings] = useState(2);
@@ -39,11 +41,12 @@ export default function GrillePlan({
 
   async function ajouter(date: string, slot: string) {
     if (!recetteChoisie) return;
-    await fetch("/api/plan", {
+    const res = await fetch("/api/plan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date: date.slice(0, 10), slot, recipeId: recetteChoisie, servings }),
     });
+    if (res.ok) emettre("repas-planifie");
     setCaseActive(null);
     router.refresh();
   }
@@ -59,7 +62,8 @@ export default function GrillePlan({
   }
 
   async function supprimer(entryId: string) {
-    await fetch(`/api/plan/${entryId}`, { method: "DELETE" });
+    const res = await fetch(`/api/plan/${entryId}`, { method: "DELETE" });
+    if (res.ok) emettre("repas-retire");
     router.refresh();
   }
 

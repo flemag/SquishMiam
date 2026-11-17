@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMiamz } from "@/components/miamz/fournisseur";
 
 const UNITES = ["g", "kg", "ml", "cl", "l", "pièce", "boîte"];
 
@@ -9,6 +10,7 @@ type LigneIngredient = { nom: string; quantite: string; unite: string };
 
 export default function NouvelleRecettePage() {
   const router = useRouter();
+  const { emettre } = useMiamz();
   const [title, setTitle] = useState("");
   const [servings, setServings] = useState(2);
   const [minutes, setMinutes] = useState("");
@@ -49,6 +51,7 @@ export default function NouvelleRecettePage() {
         }),
       });
       if (res.ok) {
+        emettre("recette-creee");
         router.push("/recettes");
         router.refresh();
       } else {

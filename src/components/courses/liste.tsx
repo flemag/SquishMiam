@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMiamz } from "@/components/miamz/fournisseur";
 
 type ItemVue = { id: string; nom: string; affichage: string; checked: boolean };
 
@@ -13,6 +14,7 @@ export default function ListeCourses({
   groupes: { rayon: string; items: ItemVue[] }[];
 }) {
   const router = useRouter();
+  const { emettre } = useMiamz();
   const [enCours, setEnCours] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -38,11 +40,12 @@ export default function ListeCourses({
   }
 
   async function cocher(id: string, checked: boolean) {
-    await fetch(`/api/courses/${id}`, {
+    const res = await fetch(`/api/courses/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ checked }),
     });
+    if (res.ok && checked) emettre("course-cochee");
     router.refresh();
   }
 
