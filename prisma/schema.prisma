@@ -87,11 +87,18 @@ model GroceryListItem {
   unite     String?
   rayon     String
   checked   Boolean  @default(false)
+  source    GroceryItemSource @default(PLAN)
+  masquee   Boolean  @default(false)
   weekStart DateTime @db.Date
   ownerId   String
   owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@unique([ownerId, weekStart, nom, unite])
+}
+
+enum GroceryItemSource {
+  PLAN
+  MANUEL
 }
 
 // Modèles standards de l'adaptateur Auth.js (@auth/prisma-adapter)
