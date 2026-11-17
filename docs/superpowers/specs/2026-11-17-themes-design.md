@@ -45,6 +45,30 @@ En utilisant l'app, Steve trouve le thème « triste » : fond beige trop sobre,
 5. **Sélecteur** : bouton palette (SVG inline) dans la barre du haut → popover listant les 3 thèmes (pastille-aperçu + nom, cible ≥ 44 px) ; au choix : pose du cookie `miamz-theme` (`path=/; max-age=31536000; samesite=lax`) **et** `document.documentElement.dataset.theme` (effet immédiat). Le layout racine lit `cookies()` et rend `<html data-theme="…">`.
 6. **Boutique (amendement au design doc maître)** : les thèmes deviennent un type de contenu boutique (gratuits/payants) ; au moment venu, le choix passera côté compte avec vérification d'entitlement ; le cookie reste la valeur de rendu par défaut.
 
+## Palettes exactes (extraites des maquettes validées — `.superpowers/brainstorm/643-1794925693/content/ambiance.html`)
+
+La palette contractuelle (`--miamz-rose/menthe/lilas/vert/corail`) reste **identique entre thèmes** ; l'identité visuelle vient du fond, des traits, des ombres, des rayons et des boutons.
+
+| Token | `manga` (défaut) | `doux` | `pique-nique` |
+|---|---|---|---|
+| Fond de scène | `#FFF3D6` + damier défilant rgba(255,181,194,.20)/rgba(168,230,207,.18), tuiles 40 px, 9 s | dégradé 160° `#FFF9E6→#FFEDF1→#FBE3EC` | vichy rgba(255,181,194,.20) 18 px bidirectionnel sur `#FFF7EA` |
+| Trait (couleur/épaisseur) | `#3A2E2E` / 2.5 px | rgba(58,46,46,.10) / 1.5 px | rgba(224,122,95,.22) / 1.5 px |
+| Carte | blanche, rayon 16 px, ombre `5px 6px 0 #3A2E2E` | blanche, rayon 20 px, ombre `0 6px 18px rgba(58,46,46,.06)` | blanche, rayon 18 px, ombre `0 8px 20px rgba(224,122,95,.14)` |
+| Bouton primaire | `#E07A5F`, bordure chocolat 2.5 px, ombre `0 4px 0 #3A2E2E`, rayon 14 px | `#4A6741`, sans bordure, ombre `0 3px 0 rgba(58,46,46,.18)`, rayon 999 px | `#E07A5F`, sans bordure, ombre `0 3px 0 #c96a51`, rayon 16 px |
+| Bouton secondaire | blanc, bordure/ombre chocolat comme le primaire | blanc translucide, bordure rgba(58,46,46,.14) | rgba(255,181,194,.35) |
+| Doodles (opacité) | .16 | .08 | .15 |
+| Fond voilé (barres) | rgba(255,243,214,.92) | rgba(255,249,230,.92) | rgba(255,247,234,.92) |
+
+Tokens étendus (constantes tous thèmes, mappés en utilitaires Tailwind via `@theme inline`) : `--texte-doux` rgba(58,46,46,.64) (remplace gray-500/600), `--texte-tres-doux` rgba(58,46,46,.45) (remplace gray-400), `--bordure` rgba(58,46,46,.12) (remplace border-gray-200), `--danger` `#B0413E`, `--fond-voile` ci-dessus.
+
+## Résolutions du builder-check (décisions du builder — à corriger si besoin)
+
+1. **Séquence** : 2d (thèmes) s'exécute **avant** 2c (approuvé par Steve) ; le plan 2c reçoit un amendement de contraintes (hex bruts → classes sémantiques).
+2. **Palettes** : extraites du fichier maquette validé et consignées ci-dessus — le plan est déterministe ; une passe de validation visuelle par Steve reste prévue à la fin.
+3. **Couverture** : thème + `FondAnime` sur **toutes** les pages (le layout racine lit le cookie ; les fonds opaques `bg-[#FFF9E6]` des wrappers sont retirés pour laisser voir le fond fixe). Le compagnon reste dans `(app)` (il dépend de l'auth) ; `/connexion` garde sa statuette statique ; `/admin/cles` est thématisé par le layout racine (refactor de classes opportuniste).
+4. **Tokens étendus** : oui — liste ci-dessus ; les gris Tailwind disparaissent au refactor (lisibilité du thème manga sur fond animé).
+5. **Tap sur Miamz** : les bulles d'humeur spontanées restent **inchangées** ; le tap affiche une bulle **contextuelle à la page** (pool par chemin, utilitaire pur `bullesPourChemin(chemin)` sans paramètre d'humeur) avec le rebond existant. La navigation seule ne déclenche rien.
+
 ## Ce qui reste au builder
 
 - Réglages fins des valeurs par thème (opacité/densité des doodles, vitesse du damier) — retouche visuelle avec Steve.

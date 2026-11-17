@@ -14,7 +14,8 @@
 
 - Mobile + desktop : 360 px → desktop, cibles tactiles ≥ 44 px, `env(safe-area-inset-bottom)`, **aucun débordement de page** (le scroll horizontal de la grille hebdo est le seul toléré).
 - Animations `transform`/`opacity` uniquement ; `prefers-reduced-motion` → tout s'arrête, l'information reste lisible.
-- UI 100 % française ; identifiants de domaine en français ; palette pastel (#FFB5C2 #A8E6CF #FFF9E6 #C9B6E4 #4A6741 #E07A5F) / Fredoka.
+- UI 100 % française ; identifiants de domaine en français ; Fredoka.
+- **Amendement post-2d (thèmes)** : ce plan s'exécute APRÈS le plan 2d « Miamz en couleurs » — les hex de palette cités ci-dessous s'écrivent désormais via les **classes sémantiques du thème** (`.bouton`, `.bouton-secondaire`, `.bouton-danger`, `.carte`, `.puce`, `.champ`) et les utilitaires tokens (`text-miamz-vert`, `text-texte-doux`, `bg-fond-voile`, `border-bordure`, `text-danger`) ; les hex entre parenthèses restent les valeurs du thème `manga` par défaut.
 - **Zéro nouvelle dépendance npm** ; SVG inline type Lucide (pattern nav-bar).
 - TDD sur la logique pure (Vitest) ; `npm test` + `npm run build` verts avant chaque commit.
 - Événements Miamz : **seuls** création (`repas-planifie`) et suppression (`repas-retire`) d'un repas émettent ; **aucune modification** (portions, déplacement, changement de recette) n'émet.
