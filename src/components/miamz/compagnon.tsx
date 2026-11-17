@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { pickMessage, pickVariante, type HumeurId } from "@/lib/humeurs";
 import { evaluerHumeur, type ContexteMiamz } from "@/lib/moteur-humeur";
 import { regardVers } from "@/lib/regard";
+import { bullesPourChemin } from "@/lib/themes";
 import { MiamzContext } from "./contexte";
 import MiamzSvg, { type MiamzSvgProps } from "./svg";
 
@@ -105,10 +107,13 @@ const graineMinute = () => Math.floor(Date.now() / MINUTE);
  * Widget compagnon vivant : fixed bas-droite, zone cliquable = le SVG seul
  * (le conteneur ne capte aucun clic, la bulle ne bloque rien). Recalcule
  * l'humeur au montage, toutes les 30 s et à chaque événement du contexte ;
- * tolère un contexte absent (avant le Task 5) : horloge seule.
+ * tolère un contexte absent (avant le Task 5) : horloge seule. Au tap :
+ * rebond + bulle contextuelle à la page (bullesPourChemin), sans toucher
+ * au moteur d'humeur.
  */
 export default function Compagnon() {
   const miamz = useContext(MiamzContext);
+  const pathname = usePathname();
   const [humeur, setHumeur] = useState<HumeurId>("content");
   const [variante, setVariante] = useState(0);
   const [bulle, setBulle] = useState<string | null>(null);
@@ -121,11 +126,18 @@ export default function Compagnon() {
   const minuteurBulle = useRef<ReturnType<typeof setTimeout> | null>(null);
   const minuteurRebond = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const montreBulle = useCallback((h: HumeurId) => {
-    setBulle(pickMessage(h, graineMinute()));
+  const afficheBulle = useCallback((texte: string) => {
+    setBulle(texte);
     if (minuteurBulle.current) clearTimeout(minuteurBulle.current);
     minuteurBulle.current = setTimeout(() => setBulle(null), DUREE_BULLE_MS);
   }, []);
+
+  const montreBulle = useCallback(
+    (h: HumeurId) => {
+      afficheBulle(pickMessage(h, graineMinute()));
+    },
+    [afficheBulle]
+  );
 
   /** Humeur = horloge + événements du contexte, avec l'âge rafraîchi. */
   const recalcule = useCallback(() => {
@@ -212,7 +224,9 @@ export default function Compagnon() {
     requestAnimationFrame(() => setRebond(true));
     if (minuteurRebond.current) clearTimeout(minuteurRebond.current);
     minuteurRebond.current = setTimeout(() => setRebond(false), DUREE_REBOND_MS);
-    montreBulle(humeur);
+    // Bulle contextuelle à la page (jamais de message d'humeur au tap).
+    const pool = bullesPourChemin(pathname);
+    afficheBulle(pool[graineMinute() % pool.length]);
   };
 
   const animation = rebond
