@@ -44,15 +44,19 @@ export default function FeuilleRecette({
 }) {
   const router = useRouter();
   const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState(false);
 
   async function supprimer() {
     if (!recette) return;
     setEnCours(true);
+    setErreur(false);
     try {
       const res = await fetch(`/api/recipes/${recette.id}`, { method: "DELETE" });
       if (res.ok) {
         onFermer();
         router.refresh();
+      } else {
+        setErreur(true);
       }
     } finally {
       setEnCours(false);
@@ -83,6 +87,7 @@ export default function FeuilleRecette({
         {recette.servings} portion{recette.servings > 1 ? "s" : ""}
         {recette.minutes ? ` · ${recette.minutes} min` : ""}
       </p>
+      {erreur && <p className="mt-2 text-sm text-danger">Suppression impossible — réessaie.</p>}
 
       {recette.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">

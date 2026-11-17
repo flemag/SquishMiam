@@ -59,11 +59,13 @@ export default function RecettesClient({ recettes }: { recettes: RecetteVue[] })
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="sticky top-[3.5rem] z-10 -mx-4 bg-fond-voile px-4 py-2 backdrop-blur">
+      <div className="sticky top-[4.25rem] z-10 -mx-4 bg-fond-voile px-4 py-2 backdrop-blur">
         <input
           value={requete}
           onChange={(e) => setRequete(e.target.value)}
+          type="search"
           placeholder="Rechercher un titre ou un ingrédient…"
+          aria-label="Rechercher un titre ou un ingrédient"
           className="champ w-full rounded-full"
         />
       </div>

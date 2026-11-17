@@ -8,7 +8,7 @@ const REPAS_SEMAINE_COMPLETE = SLOTS.length * 7;
 /**
  * Réduction pure de l'état du compagnon : le provider (fournisseur.tsx) la
  * branche sur useReducer, c'est tout. "semaine-complete" est un événement
- * interne : émis ici quand une planification porte la semaine à 14 repas,
+ * interne : émis ici quand une planification porte la semaine à 21 repas,
  * une seule fois par session.
  */
 export function prochainEtat(

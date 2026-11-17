@@ -148,7 +148,7 @@ export default function NavBar() {
       {/* Barre haute : logo à gauche, liens (desktop) et déconnexion à droite.
           Sur mobile, seuls le logo, le sélecteur de thème et la déconnexion —
           zéro débordement. */}
-      <header className="sticky top-0 z-10 border-b border-bordure bg-fond-voile backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-bordure bg-fond-voile backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
           <Link href="/plan" className="flex items-center gap-2 text-lg font-semibold text-[#4A6741]">
             <MiamzStatuette size={34} /> Miamz

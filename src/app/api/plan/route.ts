@@ -48,7 +48,9 @@ export async function POST(req: Request) {
   const recipe = await db.recipe.findFirst({ where: { id: recipeId, createdById: userId } });
   if (!recipe) return NextResponse.json({ error: "Recette introuvable" }, { status: 404 });
 
-  const entry = await db.mealPlanEntry.upsert({
+  // Jamais d'écrasement silencieux : une case occupée est un conflit (409),
+  // y compris hors UI (deux onglets, deux appareils).
+  const existante = await db.mealPlanEntry.findUnique({
     where: {
       ownerId_date_slot: {
         ownerId: userId,
@@ -56,8 +58,13 @@ export async function POST(req: Request) {
         slot,
       },
     },
-    update: { recipeId, servings },
-    create: { date: dateObj, slot, recipeId, servings, ownerId: userId },
+  });
+  if (existante) {
+    return NextResponse.json({ error: "Une case occupe déjà ce créneau" }, { status: 409 });
+  }
+
+  const entry = await db.mealPlanEntry.create({
+    data: { date: dateObj, slot, recipeId, servings, ownerId: userId },
   });
   return NextResponse.json({ entry }, { status: 201 });
 }

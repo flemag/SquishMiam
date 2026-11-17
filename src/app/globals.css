@@ -7,7 +7,6 @@
 :root {
   --miamz-rose: #ffb5c2;
   --miamz-menthe: #a8e6cf;
-  --miamz-creme: #fff9e6;
   --miamz-lilas: #c9b6e4;
   --miamz-vert: #4a6741;
   --miamz-corail: #e07a5f;
@@ -111,7 +110,6 @@ html[data-theme="pique-nique"] {
   --color-foreground: var(--foreground);
   --color-miamz-rose: var(--miamz-rose);
   --color-miamz-menthe: var(--miamz-menthe);
-  --color-miamz-creme: var(--miamz-creme);
   --color-miamz-lilas: var(--miamz-lilas);
   --color-miamz-vert: var(--miamz-vert);
   --color-miamz-corail: var(--miamz-corail);

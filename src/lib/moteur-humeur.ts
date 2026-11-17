@@ -2,7 +2,7 @@ import type { HumeurId } from "@/lib/humeurs";
 
 /**
  * Événements émis par l'app (Task 5). "semaine-complete" est généré par le
- * fournisseur d'état quand les repas planifiés atteignent 14.
+ * fournisseur d'état quand les repas planifiés atteignent 21.
  */
 export type EvenementMiamz =
   | "repas-planifie"
@@ -14,7 +14,7 @@ export type EvenementMiamz =
 export type ContexteMiamz = {
   /** Horloge du client (navigateur) — le moteur l'utilise telle quelle. */
   maintenant: Date;
-  /** Nombre de repas planifiés cette semaine (0..14). */
+  /** Nombre de repas planifiés cette semaine (0..21). */
   repasSemaine: number;
   /** Dernier événement connu et son âge en ms ; null au repos. */
   dernierEvenement: { type: EvenementMiamz; ilYAms: number } | null;

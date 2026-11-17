@@ -58,6 +58,6 @@ export function filtrerRecettes<T extends RecetteRecherchable>(
 export function trierRecettes<T extends RecetteRecherchable>(recettes: T[], tri: Tri): T[] {
   const copie = [...recettes];
   if (tri === "alpha") copie.sort((x, y) => x.title.localeCompare(y.title, "fr"));
-  if (tri === "duree") copie.sort((x, y) => (x.minutes ?? Infinity) - (y.minutes ?? Infinity));
+  if (tri === "duree") copie.sort((x, y) => ((x.minutes ?? Infinity) - (y.minutes ?? Infinity)) || 0);
   return copie; // "recent" : l'ordre serveur (createdAt desc) est conservé
 }

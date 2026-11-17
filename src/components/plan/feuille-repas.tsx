@@ -75,6 +75,8 @@ export default function FeuilleRepas({
         emettre("repas-planifie");
         onFermer();
         router.refresh();
+      } else if (res.status === 409) {
+        setErreur("Une case occupe déjà ce créneau");
       } else {
         setErreur("Ajout impossible — réessaie.");
       }
@@ -124,6 +126,8 @@ export default function FeuilleRepas({
         emettre("repas-retire");
         onFermer();
         router.refresh();
+      } else {
+        setErreur("Suppression impossible — réessaie.");
       }
     } finally {
       setEnCours(false);
