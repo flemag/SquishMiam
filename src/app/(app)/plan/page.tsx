@@ -29,7 +29,7 @@ export default async function PlanPage({
     }),
     db.recipe.findMany({
       where: { createdById: userId },
-      select: { id: true, title: true },
+      select: { id: true, title: true, minutes: true, ingredients: true },
       orderBy: { title: "asc" },
     }),
   ]);

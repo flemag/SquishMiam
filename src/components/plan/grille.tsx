@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMiamz } from "@/components/miamz/fournisseur";
+import FeuilleRepas, { type RecetteChoix } from "./feuille-repas";
 
-type EntryVue = {
+export type EntryVue = {
   id: string;
   date: string;
   slot: string;
@@ -12,8 +12,6 @@ type EntryVue = {
   recipeId: string;
   title: string;
 };
-
-type RecetteChoix = { id: string; title: string };
 
 export default function GrillePlan({
   dates,
@@ -29,28 +27,14 @@ export default function GrillePlan({
   recipes: RecetteChoix[];
 }) {
   const router = useRouter();
-  const { emettre } = useMiamz();
-  const [caseActive, setCaseActive] = useState<{ date: string; slot: string } | null>(null);
-  const [recetteChoisie, setRecetteChoisie] = useState(recipes[0]?.id ?? "");
-  const [servings, setServings] = useState(2);
   const [glisse, setGlisse] = useState<string | null>(null);
+  const [feuille, setFeuille] = useState<{ date: string; slot: string; entry: EntryVue | null } | null>(null);
 
   function entryDe(date: string, slot: string): EntryVue | undefined {
     return entries.find((e) => e.date.slice(0, 10) === date.slice(0, 10) && e.slot === slot);
   }
 
-  async function ajouter(date: string, slot: string) {
-    if (!recetteChoisie) return;
-    const res = await fetch("/api/plan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: date.slice(0, 10), slot, recipeId: recetteChoisie, servings }),
-    });
-    if (res.ok) emettre("repas-planifie");
-    setCaseActive(null);
-    router.refresh();
-  }
-
+  // Glisser-déposer (bonus desktop) = une modification : aucun événement Miamz.
   async function deplacer(entryId: string, date: string, slot: string) {
     await fetch(`/api/plan/${entryId}`, {
       method: "PATCH",
@@ -61,16 +45,18 @@ export default function GrillePlan({
     router.refresh();
   }
 
-  async function supprimer(entryId: string) {
-    const res = await fetch(`/api/plan/${entryId}`, { method: "DELETE" });
-    if (res.ok) emettre("repas-retire");
-    router.refresh();
-  }
+  // Toutes les cases occupées sauf celle du repas en édition (sa position
+  // actuelle reste sélectionnable : no-op).
+  const clesOccupees = new Set(
+    entries.filter((e) => e.id !== feuille?.entry?.id).map((e) => `${e.date.slice(0, 10)}|${e.slot}`)
+  );
 
   return (
     <div>
       <div className="carte mb-4 flex flex-wrap items-center gap-3 p-4">
-        <span className="text-sm text-texte-doux">Glisse une recette d&apos;une case à l&apos;autre, ou clique sur + pour remplir.</span>
+        <span className="text-sm text-texte-doux">
+          Glisse une recette d&apos;une case à l&apos;autre, ou clique sur + pour remplir.
+        </span>
       </div>
 
       <div className="overflow-x-auto pb-2">
@@ -102,62 +88,21 @@ export default function GrillePlan({
                       onDragEnd={() => setGlisse(null)}
                       className="cursor-grab"
                     >
-                      <p className="text-sm font-medium leading-tight text-foreground">{entry.title}</p>
-                      <p className="text-xs text-texte-tres-doux">{entry.servings} portion(s)</p>
-                      <button
-                        onClick={() => supprimer(entry.id)}
-                        className="mt-1 text-[10px] text-danger/60 hover:text-danger"
-                      >
-                        retirer
+                      <button type="button" onClick={() => setFeuille({ date, slot, entry })} className="w-full text-left">
+                        <p className="text-sm font-medium leading-tight text-foreground">{entry.title}</p>
+                        <p className="text-xs text-texte-tres-doux">{entry.servings} portion(s)</p>
                       </button>
                     </div>
                   ) : (
                     <button
-                      onClick={() => setCaseActive({ date, slot })}
+                      type="button"
+                      onClick={() => setFeuille({ date, slot, entry: null })}
                       className="flex h-16 w-full items-center justify-center rounded-xl text-xl text-[#4A6741]/40 hover:bg-[#A8E6CF]/20"
                       title="Ajouter un repas"
+                      aria-label={`Ajouter un repas — ${slotLabels[slot] ?? slot}`}
                     >
                       +
                     </button>
-                  )}
-
-                  {caseActive && caseActive.date === date && caseActive.slot === slot && (
-                    <div className="mt-1 flex flex-col gap-1 rounded-xl bg-[#FFF9E6] p-2">
-                      <select
-                        value={recetteChoisie}
-                        onChange={(e) => setRecetteChoisie(e.target.value)}
-                        className="rounded-lg border border-bordure px-2 py-1 text-xs"
-                      >
-                        {recipes.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.title}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        min={1}
-                        max={12}
-                        value={servings}
-                        onChange={(e) => setServings(Number(e.target.value))}
-                        className="rounded-lg border border-bordure px-2 py-1 text-xs"
-                        title="Portions"
-                      />
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => ajouter(date, slot)}
-                          className="flex-1 rounded-lg bg-[#4A6741] px-2 py-1 text-xs text-white"
-                        >
-                          OK
-                        </button>
-                        <button
-                          onClick={() => setCaseActive(null)}
-                          className="flex-1 rounded-lg bg-gray-100 px-2 py-1 text-xs text-texte-doux"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </div>
                   )}
                 </div>
               );
@@ -165,6 +110,19 @@ export default function GrillePlan({
           )}
         </div>
       </div>
+
+      {feuille && (
+        <FeuilleRepas
+          cible={{ date: feuille.date, slot: feuille.slot }}
+          entry={feuille.entry}
+          recipes={recipes}
+          clesOccupees={clesOccupees}
+          dates={dates}
+          slots={slots}
+          slotLabels={slotLabels}
+          onFermer={() => setFeuille(null)}
+        />
+      )}
     </div>
   );
 }
