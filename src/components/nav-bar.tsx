@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import MiamzStatuette from "@/components/miamz-statuette";
+import { THEMES, THEME_DEFAUT, themeDepuisValeur, type ThemeId } from "@/lib/themes";
 
 const LIENS = [
   { href: "/plan", label: "Plan", Icone: Icalendrier },
@@ -51,13 +53,101 @@ function Ideconnexion({ className }: { className?: string }) {
   );
 }
 
+function Ipalette({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="13.5" cy="6.5" r="0.5" fill="currentColor" />
+      <circle cx="17.5" cy="10.5" r="0.5" fill="currentColor" />
+      <circle cx="8.5" cy="7.5" r="0.5" fill="currentColor" />
+      <circle cx="6.5" cy="12.5" r="0.5" fill="currentColor" />
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.648-1.687h2.226c3.2 0 5.853-2.58 5.853-5.75C22 6.5 17.5 2 12 2z" />
+    </svg>
+  );
+}
+
+/** Valeur du cookie miamz-theme (regex simple ; themeDepuisValeur garde le reste). */
+function litCookieTheme(): string | null {
+  const m = /(?:^|;\s*)miamz-theme=([^;]*)/.exec(document.cookie);
+  return m ? m[1] : null;
+}
+
+/**
+ * Sélecteur de thème : bouton palette (44 px) → popover .carte listant les
+ * 3 thèmes. Au choix : cookie persistant (relui par le layout racine au
+ * prochain rendu serveur) + data-theme immédiat (changement instantané,
+ * sans rechargement), puis fermeture. Déclose au clic sur le fond.
+ */
+function SelecteurTheme() {
+  const [ouvert, setOuvert] = useState(false);
+  const [theme, setTheme] = useState<ThemeId>(THEME_DEFAUT);
+
+  // Lu une fois au montage : le serveur a déjà posé data-theme sur <html> ;
+  // ici on aligne seulement la coche du popover (zéro décalage d'hydratation).
+  useEffect(() => {
+    setTheme(themeDepuisValeur(litCookieTheme()));
+  }, []);
+
+  function choisir(id: ThemeId) {
+    document.cookie = `miamz-theme=${id}; path=/; max-age=31536000; samesite=lax`;
+    document.documentElement.dataset.theme = id;
+    setTheme(id);
+    setOuvert(false);
+  }
+
+  return (
+    <>
+      {ouvert && (
+        <button
+          type="button"
+          onClick={() => setOuvert(false)}
+          aria-label="Fermer le choix de thème"
+          tabIndex={-1}
+          className="fixed inset-0 z-10 cursor-default"
+        />
+      )}
+      <button
+        type="button"
+        onClick={() => setOuvert((o) => !o)}
+        aria-label="Choisir un thème"
+        aria-expanded={ouvert}
+        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-texte-doux transition hover:bg-[#A8E6CF]/30"
+      >
+        <Ipalette className="h-5 w-5" />
+      </button>
+      {ouvert && (
+        <div className="carte absolute right-4 top-[calc(100%+0.5rem)] z-20 w-64 p-2">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => choisir(t.id)}
+              aria-current={theme === t.id ? "true" : undefined}
+              className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-foreground transition ${
+                theme === t.id ? "bg-[#A8E6CF]/30" : "hover:bg-[#A8E6CF]/20"
+              }`}
+            >
+              <span className="flex shrink-0 items-center gap-1">
+                <span className="h-4 w-4 rounded-full border border-bordure" style={{ background: t.apercu.fond }} />
+                <span className="h-4 w-4 rounded-full border border-bordure" style={{ background: t.apercu.accent }} />
+                <span className="h-4 w-4 rounded-full border border-bordure" style={{ background: t.apercu.trait }} />
+              </span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function NavBar() {
   const pathname = usePathname();
 
   return (
     <>
       {/* Barre haute : logo à gauche, liens (desktop) et déconnexion à droite.
-          Sur mobile, seuls le logo et l'icône de déconnexion — zéro débordement. */}
+          Sur mobile, seuls le logo, le sélecteur de thème et la déconnexion —
+          zéro débordement. */}
       <header className="sticky top-0 z-10 border-b border-bordure bg-fond-voile backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
           <Link href="/plan" className="flex items-center gap-2 text-lg font-semibold text-[#4A6741]">
@@ -78,6 +168,7 @@ export default function NavBar() {
                 </Link>
               );
             })}
+            <SelecteurTheme />
             <button
               onClick={() => signOut({ callbackUrl: "/connexion" })}
               className="ml-2 rounded-full px-3 py-2 text-sm text-texte-tres-doux transition hover:bg-[#FFB5C2]/25 hover:text-danger"
@@ -86,14 +177,17 @@ export default function NavBar() {
               Déconnexion
             </button>
           </nav>
-          <button
-            onClick={() => signOut({ callbackUrl: "/connexion" })}
-            aria-label="Se déconnecter"
-            title="Se déconnecter"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-texte-tres-doux transition hover:bg-[#FFB5C2]/25 hover:text-danger sm:hidden"
-          >
-            <Ideconnexion className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1 sm:hidden">
+            <SelecteurTheme />
+            <button
+              onClick={() => signOut({ callbackUrl: "/connexion" })}
+              aria-label="Se déconnecter"
+              title="Se déconnecter"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-texte-tres-doux transition hover:bg-[#FFB5C2]/25 hover:text-danger"
+            >
+              <Ideconnexion className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </header>
 
