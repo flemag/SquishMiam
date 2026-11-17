@@ -70,9 +70,25 @@ export default function ListeCourses({
         </div>
       ) : (
         groupes.map((g) => (
-          <section key={g.rayon} className="carte p-5">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#8fb5a2]">{g.rayon}</h2>
-            <ul className="flex flex-col gap-1">
+          <details key={g.rayon} open className="carte group">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-5 py-3 [&::-webkit-details-marker]:hidden">
+              <span className="text-sm font-semibold uppercase tracking-wide text-[#8fb5a2]">
+                {g.rayon} · {g.items.filter((i) => i.checked).length}/{g.items.length}
+              </span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 text-texte-doux transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <ul className="flex flex-col gap-1 px-5 pb-4">
               {g.items.map((item) => (
                 <li key={item.id}>
                   <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-[#A8E6CF]/15">
@@ -89,7 +105,7 @@ export default function ListeCourses({
                 </li>
               ))}
             </ul>
-          </section>
+          </details>
         ))
       )}
     </div>
