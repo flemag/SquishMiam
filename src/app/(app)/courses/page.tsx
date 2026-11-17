@@ -47,21 +47,21 @@ export default async function CoursesPage({
     <main>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#4A6741]">Liste de courses</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-semibold text-miamz-vert">Liste de courses</h1>
+          <p className="text-sm text-texte-doux">
             Semaine du {formatJourFr(dates[0])} · {coches}/{items.length} cochés
           </p>
         </div>
         <div className="flex items-center gap-2">
           <a
             href={`/courses?semaine=${formatDateIso(prev)}`}
-            className="rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-[#A8E6CF]/30"
+            className="bouton-secondaire"
           >
             ←
           </a>
           <a
             href={`/courses?semaine=${formatDateIso(next)}`}
-            className="rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-[#A8E6CF]/30"
+            className="bouton-secondaire"
           >
             →
           </a>

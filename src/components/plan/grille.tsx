@@ -69,14 +69,14 @@ export default function GrillePlan({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-3xl bg-white p-4 shadow-sm">
-        <span className="text-sm text-gray-500">Glisse une recette d&apos;une case à l&apos;autre, ou clique sur + pour remplir.</span>
+      <div className="carte mb-4 flex flex-wrap items-center gap-3 p-4">
+        <span className="text-sm text-texte-doux">Glisse une recette d&apos;une case à l&apos;autre, ou clique sur + pour remplir.</span>
       </div>
 
       <div className="overflow-x-auto pb-2">
         <div className="grid min-w-[760px] grid-cols-7 gap-2">
           {dates.map((date) => (
-            <div key={date} className="text-center text-xs font-medium text-gray-500">
+            <div key={date} className="text-center text-xs font-medium text-texte-doux">
               {new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(
                 new Date(date)
               )}
@@ -90,8 +90,8 @@ export default function GrillePlan({
                   key={`${date}-${slot}`}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => glisse && deplacer(glisse, date, slot)}
-                  className={`min-h-28 rounded-2xl border p-2 transition ${
-                    entry ? "bg-white border-transparent shadow-sm" : "border-dashed border-[#A8E6CF] bg-white/50"
+                  className={`min-h-28 p-2 transition ${
+                    entry ? "carte" : "rounded-2xl border border-dashed border-[#A8E6CF] bg-white/50"
                   }`}
                 >
                   <div className="mb-1 text-[10px] uppercase tracking-wide text-[#8fb5a2]">{slotLabels[slot]}</div>
@@ -102,11 +102,11 @@ export default function GrillePlan({
                       onDragEnd={() => setGlisse(null)}
                       className="cursor-grab"
                     >
-                      <p className="text-sm font-medium leading-tight text-gray-800">{entry.title}</p>
-                      <p className="text-xs text-gray-400">{entry.servings} portion(s)</p>
+                      <p className="text-sm font-medium leading-tight text-foreground">{entry.title}</p>
+                      <p className="text-xs text-texte-tres-doux">{entry.servings} portion(s)</p>
                       <button
                         onClick={() => supprimer(entry.id)}
-                        className="mt-1 text-[10px] text-[#B0413E]/60 hover:text-[#B0413E]"
+                        className="mt-1 text-[10px] text-danger/60 hover:text-danger"
                       >
                         retirer
                       </button>
@@ -126,7 +126,7 @@ export default function GrillePlan({
                       <select
                         value={recetteChoisie}
                         onChange={(e) => setRecetteChoisie(e.target.value)}
-                        className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
+                        className="rounded-lg border border-bordure px-2 py-1 text-xs"
                       >
                         {recipes.map((r) => (
                           <option key={r.id} value={r.id}>
@@ -140,7 +140,7 @@ export default function GrillePlan({
                         max={12}
                         value={servings}
                         onChange={(e) => setServings(Number(e.target.value))}
-                        className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
+                        className="rounded-lg border border-bordure px-2 py-1 text-xs"
                         title="Portions"
                       />
                       <div className="flex gap-1">
@@ -152,7 +152,7 @@ export default function GrillePlan({
                         </button>
                         <button
                           onClick={() => setCaseActive(null)}
-                          className="flex-1 rounded-lg bg-gray-100 px-2 py-1 text-xs text-gray-500"
+                          className="flex-1 rounded-lg bg-gray-100 px-2 py-1 text-xs text-texte-doux"
                         >
                           Annuler
                         </button>

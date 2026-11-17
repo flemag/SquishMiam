@@ -55,7 +55,7 @@ export default function ListeCourses({
         <button
           onClick={generer}
           disabled={enCours}
-          className="rounded-full bg-[#E07A5F] px-5 py-2.5 font-medium text-white transition hover:bg-[#c96a51] disabled:opacity-50"
+          className="bouton"
         >
           {enCours ? "Génération…" : "Générer depuis le plan de la semaine"}
         </button>
@@ -63,14 +63,14 @@ export default function ListeCourses({
       </div>
 
       {groupes.length === 0 ? (
-        <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
+        <div className="carte p-10 text-center">
           <div className="text-4xl">🛒</div>
-          <p className="mt-3 font-medium text-gray-600">Liste vide pour cette semaine.</p>
-          <p className="mt-1 text-sm text-gray-400">Planifie des repas, puis clique sur « Générer ».</p>
+          <p className="mt-3 font-medium text-texte-doux">Liste vide pour cette semaine.</p>
+          <p className="mt-1 text-sm text-texte-tres-doux">Planifie des repas, puis clique sur « Générer ».</p>
         </div>
       ) : (
         groupes.map((g) => (
-          <section key={g.rayon} className="rounded-3xl bg-white p-5 shadow-sm">
+          <section key={g.rayon} className="carte p-5">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-[#8fb5a2]">{g.rayon}</h2>
             <ul className="flex flex-col gap-1">
               {g.items.map((item) => (
@@ -82,7 +82,7 @@ export default function ListeCourses({
                       onChange={(e) => cocher(item.id, e.target.checked)}
                       className="h-4 w-4 accent-[#4A6741]"
                     />
-                    <span className={item.checked ? "text-sm text-gray-400 line-through" : "text-sm text-gray-700"}>
+                    <span className={item.checked ? "text-sm text-texte-tres-doux line-through" : "text-sm text-foreground"}>
                       {item.affichage}
                     </span>
                   </label>

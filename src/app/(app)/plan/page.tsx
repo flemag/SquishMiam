@@ -43,21 +43,21 @@ export default async function PlanPage({
     <main>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[#4A6741]">La semaine des repas</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-semibold text-miamz-vert">La semaine des repas</h1>
+          <p className="text-sm text-texte-doux">
             {formatJourFr(dates[0])} → {formatJourFr(dates[6])}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <a
             href={`/plan?semaine=${formatDateIso(prev)}`}
-            className="rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-[#A8E6CF]/30"
+            className="bouton-secondaire px-4"
           >
             ← Semaine
           </a>
           <a
             href={`/plan?semaine=${formatDateIso(next)}`}
-            className="rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-[#A8E6CF]/30"
+            className="bouton-secondaire px-4"
           >
             Semaine →
           </a>
@@ -65,10 +65,10 @@ export default async function PlanPage({
       </div>
 
       {recipes.length === 0 ? (
-        <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
+        <div className="carte p-10 text-center">
           <div className="text-4xl">📖</div>
-          <p className="mt-3 font-medium text-gray-600">Il te faut des recettes d&apos;abord !</p>
-          <a href="/recettes/nouvelle" className="mt-3 inline-block rounded-full bg-[#E07A5F] px-5 py-2.5 font-medium text-white hover:bg-[#c96a51]">
+          <p className="mt-3 font-medium text-texte-doux">Il te faut des recettes d&apos;abord !</p>
+          <a href="/recettes/nouvelle" className="bouton mt-3">
             Créer une recette
           </a>
         </div>

@@ -227,7 +227,7 @@ export default function Compagnon() {
       <div className="flex flex-col items-end gap-2">
         <div
           aria-live="polite"
-          className={`miamz-bulle max-w-[min(16rem,calc(100vw-2rem))] rounded-2xl rounded-br-sm border border-[#e5dccb] bg-white/95 px-3 py-2 text-center text-sm text-[#4a6741] shadow-md ${
+          className={`miamz-bulle max-w-[min(16rem,calc(100vw-2rem))] rounded-2xl rounded-br-sm border border-bordure bg-white/95 px-3 py-2 text-center text-sm text-miamz-vert shadow-md ${
             bulle ? "" : "hidden"
           }`}
         >

@@ -42,29 +42,29 @@ function ConnexionContent() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-lg shadow-[#FFB5C2]/20">
+      <div className="carte w-full max-w-md p-8">
         <div className="mb-6 text-center">
           <div className="flex justify-center">
             <MiamzStatuette size={72} />
           </div>
-          <h1 className="mt-3 text-3xl font-semibold text-[#4A6741]">Miamz</h1>
-          <p className="mt-1 text-sm text-gray-500">Ton compagnon repas. Bien manger, sans charge mentale.</p>
+          <h1 className="mt-3 text-3xl font-semibold text-miamz-vert">Miamz</h1>
+          <p className="mt-1 text-sm text-texte-doux">Ton compagnon repas. Bien manger, sans charge mentale.</p>
         </div>
 
         {erreurCle && (
-          <p className="mb-4 rounded-2xl bg-[#FFB5C2]/20 px-4 py-3 text-center text-sm text-[#B0413E]">
+          <p className="mb-4 rounded-2xl bg-[#FFB5C2]/20 px-4 py-3 text-center text-sm text-danger">
             Il te faut une clé d&apos;activation valide pour entrer. 🥕
           </p>
         )}
 
         <button
           onClick={() => signIn("google", { callbackUrl: "/plan" })}
-          className="w-full rounded-full border border-gray-200 bg-white px-4 py-3 font-medium text-gray-700 transition hover:bg-gray-50"
+          className="bouton-secondaire w-full"
         >
           Continuer avec Google
         </button>
 
-        <div className="my-6 flex items-center gap-3 text-xs text-gray-400">
+        <div className="my-6 flex items-center gap-3 text-xs text-texte-tres-doux">
           <span className="h-px flex-1 bg-gray-200" />
           ou activer une clé
           <span className="h-px flex-1 bg-gray-200" />
@@ -75,16 +75,16 @@ function ConnexionContent() {
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="MIAMZ-XXXX-XXXX-XXXX"
-            className="w-full rounded-full border border-gray-200 px-4 py-3 text-center font-mono tracking-wider outline-none focus:border-[#A8E6CF]"
+            className="champ w-full text-center font-mono tracking-wider"
           />
           <button
             onClick={activerCle}
             disabled={enCours}
-            className="w-full rounded-full bg-[#4A6741] px-4 py-3 font-medium text-white transition hover:bg-[#3d5535] disabled:opacity-50"
+            className="bouton w-full"
           >
             {enCours ? "Activation…" : "Activer ma clé"}
           </button>
-          {message && <p className="text-center text-sm text-[#B0413E]">{message}</p>}
+          {message && <p className="text-center text-sm text-danger">{message}</p>}
         </div>
       </div>
     </main>

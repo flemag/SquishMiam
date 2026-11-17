@@ -58,7 +58,7 @@ export default function NavBar() {
     <>
       {/* Barre haute : logo à gauche, liens (desktop) et déconnexion à droite.
           Sur mobile, seuls le logo et l'icône de déconnexion — zéro débordement. */}
-      <header className="sticky top-0 z-10 border-b border-[#4A6741]/10 bg-[#FFF9E6]/90 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-bordure bg-fond-voile backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
           <Link href="/plan" className="flex items-center gap-2 text-lg font-semibold text-[#4A6741]">
             <MiamzStatuette size={34} /> Miamz
@@ -71,7 +71,7 @@ export default function NavBar() {
                   key={lien.href}
                   href={lien.href}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    actif ? "bg-[#4A6741] text-white" : "text-gray-600 hover:bg-[#A8E6CF]/30"
+                    actif ? "bg-[#4A6741] text-white" : "text-texte-doux hover:bg-[#A8E6CF]/30"
                   }`}
                 >
                   {lien.label}
@@ -80,7 +80,7 @@ export default function NavBar() {
             })}
             <button
               onClick={() => signOut({ callbackUrl: "/connexion" })}
-              className="ml-2 rounded-full px-3 py-2 text-sm text-gray-400 transition hover:bg-[#FFB5C2]/25 hover:text-[#B0413E]"
+              className="ml-2 rounded-full px-3 py-2 text-sm text-texte-tres-doux transition hover:bg-[#FFB5C2]/25 hover:text-danger"
               title="Se déconnecter"
             >
               Déconnexion
@@ -90,7 +90,7 @@ export default function NavBar() {
             onClick={() => signOut({ callbackUrl: "/connexion" })}
             aria-label="Se déconnecter"
             title="Se déconnecter"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-gray-400 transition hover:bg-[#FFB5C2]/25 hover:text-[#B0413E] sm:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-texte-tres-doux transition hover:bg-[#FFB5C2]/25 hover:text-danger sm:hidden"
           >
             <Ideconnexion className="h-5 w-5" />
           </button>
@@ -100,7 +100,7 @@ export default function NavBar() {
       {/* Barre d'onglets mobile (Android/iOS) : fixe, safe-area, cibles ≥ 44 px. */}
       <nav
         aria-label="Navigation principale"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-[#4A6741]/10 bg-[#FFF9E6]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-bordure bg-fond-voile pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
         <div className="mx-auto grid max-w-5xl grid-cols-3">
           {LIENS.map((lien) => {
@@ -111,7 +111,7 @@ export default function NavBar() {
                 href={lien.href}
                 aria-current={actif ? "page" : undefined}
                 className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-2 py-2 text-[11px] font-medium transition ${
-                  actif ? "text-[#4A6741]" : "text-gray-500"
+                  actif ? "text-[#4A6741]" : "text-texte-doux"
                 }`}
               >
                 <lien.Icone className="h-6 w-6" />

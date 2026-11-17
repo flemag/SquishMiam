@@ -65,21 +65,21 @@ export default function NouvelleRecettePage() {
 
   return (
     <main className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-2xl font-semibold text-[#4A6741]">Nouvelle recette</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-miamz-vert">Nouvelle recette</h1>
 
-      <div className="flex flex-col gap-5 rounded-3xl bg-white p-6 shadow-sm">
-        <label className="flex flex-col gap-1 text-sm text-gray-600">
+      <div className="carte flex flex-col gap-5 p-6">
+        <label className="flex flex-col gap-1 text-sm text-texte-doux">
           Titre
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Gratin de courgettes"
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+            className="champ"
           />
         </label>
 
         <div className="flex gap-4">
-          <label className="flex flex-1 flex-col gap-1 text-sm text-gray-600">
+          <label className="flex flex-1 flex-col gap-1 text-sm text-texte-doux">
             Portions
             <input
               type="number"
@@ -87,10 +87,10 @@ export default function NouvelleRecettePage() {
               max={12}
               value={servings}
               onChange={(e) => setServings(Number(e.target.value))}
-              className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+              className="champ"
             />
           </label>
-          <label className="flex flex-1 flex-col gap-1 text-sm text-gray-600">
+          <label className="flex flex-1 flex-col gap-1 text-sm text-texte-doux">
             Minutes
             <input
               type="number"
@@ -98,22 +98,22 @@ export default function NouvelleRecettePage() {
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
               placeholder="30"
-              className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+              className="champ"
             />
           </label>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm text-gray-600">
+        <label className="flex flex-col gap-1 text-sm text-texte-doux">
           Tags (séparés par des virgules)
           <input
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="végé, rapide, familial"
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+            className="champ"
           />
         </label>
 
-        <div className="flex flex-col gap-2 text-sm text-gray-600">
+        <div className="flex flex-col gap-2 text-sm text-texte-doux">
           Ingrédients
           {ingredients.map((l, i) => (
             <div key={i} className="flex gap-2">
@@ -121,18 +121,18 @@ export default function NouvelleRecettePage() {
                 value={l.nom}
                 onChange={(e) => ligne(i, { nom: e.target.value })}
                 placeholder="Courgettes"
-                className="min-w-0 flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+                className="champ min-w-0 flex-1"
               />
               <input
                 value={l.quantite}
                 onChange={(e) => ligne(i, { quantite: e.target.value })}
                 placeholder="500"
-                className="w-20 rounded-2xl border border-gray-200 px-3 py-2.5 text-center outline-none focus:border-[#A8E6CF]"
+                className="champ w-20 text-center"
               />
               <select
                 value={l.unite}
                 onChange={(e) => ligne(i, { unite: e.target.value })}
-                className="rounded-2xl border border-gray-200 px-2 py-2.5 outline-none focus:border-[#A8E6CF]"
+                className="champ"
               >
                 {UNITES.map((u) => (
                   <option key={u} value={u}>
@@ -150,23 +150,23 @@ export default function NouvelleRecettePage() {
           </button>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm text-gray-600">
+        <label className="flex flex-col gap-1 text-sm text-texte-doux">
           Étapes (une par ligne)
           <textarea
             value={steps}
             onChange={(e) => setSteps(e.target.value)}
             rows={4}
             placeholder={"Préchauffer le four…\nMélanger…"}
-            className="rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+            className="champ py-2.5"
           />
         </label>
 
-        {message && <p className="text-sm text-[#B0413E]">{message}</p>}
+        {message && <p className="text-sm text-danger">{message}</p>}
 
         <button
           onClick={enregistrer}
           disabled={enCours}
-          className="rounded-full bg-[#4A6741] px-5 py-3 font-medium text-white transition hover:bg-[#3d5535] disabled:opacity-50"
+          className="bouton"
         >
           {enCours ? "Enregistrement…" : "Enregistrer la recette"}
         </button>
