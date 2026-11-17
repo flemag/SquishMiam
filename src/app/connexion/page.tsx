@@ -12,6 +12,7 @@ function ConnexionContent() {
   const [code, setCode] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+  const [googleEnCours, setGoogleEnCours] = useState(false);
 
   async function activerCle() {
     if (!code.trim()) {
@@ -58,10 +59,14 @@ function ConnexionContent() {
         )}
 
         <button
-          onClick={() => signIn("google", { callbackUrl: "/plan" })}
+          onClick={() => {
+            setGoogleEnCours(true);
+            signIn("google", { callbackUrl: "/plan" });
+          }}
+          disabled={googleEnCours || enCours}
           className="bouton-secondaire w-full"
         >
-          Continuer avec Google
+          {googleEnCours ? "Miamz va chercher Google…" : "Continuer avec Google"}
         </button>
 
         <div className="my-6 flex items-center gap-3 text-xs text-texte-tres-doux">

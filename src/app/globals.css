@@ -251,6 +251,20 @@ body {
   animation: miamz-bulle 160ms ease-out;
 }
 
+/* Chargements (plan 2c) : Miamz roule en attendant, squelettes qui pulsent. */
+@keyframes miamz-attente {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(-9deg); }
+  75% { transform: translateY(-3px) rotate(9deg); }
+}
+@keyframes miamz-squelette {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.miamz-squelette {
+  animation: miamz-squelette 1.4s ease-in-out infinite;
+}
+
 /*
  * Fond animé par thème (plan 2d) — fixe, derrière tout, jamais cliquable.
  * Le damier n'existe que pour « manga » ; les doodles partagent la même
@@ -398,6 +412,7 @@ html[data-theme="manga"] .fond-damier {
   .miamz-anim,
   .miamz-yeux,
   .miamz-bulle,
+  .miamz-squelette,
   .fond-d,
   .fond-damier {
     animation: none !important;
