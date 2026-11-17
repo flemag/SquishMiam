@@ -127,3 +127,13 @@ Décisions prises au niveau du design, à corriger si Steve préfère autrement 
 - Librairie de scan code-barres côté web (BarcodeDetector natif vs html5-qrcode/zxing) et intégration Open Food Facts.
 - Mécanisme d'apprentissage des préférences de Miamz (entités, extraction depuis les conversations vs les actions).
 - Détails de la décomposition composant de la mascotte (couplage moteur d'humeur ↔ animations).
+
+## Boutique de recettes (futur — annoncé par Steve, 2026-11-17)
+
+Une **boutique** sera construite par la suite pour proposer des recettes **gratuites et payantes, ouvertes à tout le monde** (au-delà du cercle privé <10 utilisateurs). Le **mode de monétisation reste à décider** (argent, publicité, ou autre) — Steve y réfléchira plus tard ; rien à construire maintenant.
+
+Implications à garder en tête pour les futurs plans (non chiffrées, à redéfinir au moment venu) :
+
+- **Modèle de données** : `Recipe` devra distinguer privé / public / boutique, avec un prix éventuel et un auteur ; les recettes publiques vivront hors du cloisonnement par utilisateur actuel.
+- **Monétisation** : la contrainte « 100 % gratuit » vise l'infrastructure — un paiement en ligne (Stripe, Lemon Squeezy…) prélève une commission ; alternatives à évaluer : vente de clés d'activation (l'infrastructure existe déjà, cf. système de clés admin), plateformes type Ko-fi / Buy Me a Coffee, ou publicité.
+- **Périmètre technique alors ajouté** : vitrine publique, pages recettes publiques référençables, achat/rachat, modération, potentiellement comptes visiteurs sans invitation.
