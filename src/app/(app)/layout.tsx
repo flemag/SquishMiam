@@ -21,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-[#FFF9E6]">
       <NavBar />
       <FournisseurMiamz repasSemaine={repasSemaine}>
-        <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>
+        <div className="mx-auto max-w-5xl px-4 pb-24 py-6 sm:pb-6">{children}</div>
         <Compagnon />
       </FournisseurMiamz>
     </div>

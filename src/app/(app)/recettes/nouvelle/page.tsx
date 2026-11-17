@@ -121,7 +121,7 @@ export default function NouvelleRecettePage() {
                 value={l.nom}
                 onChange={(e) => ligne(i, { nom: e.target.value })}
                 placeholder="Courgettes"
-                className="flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
+                className="min-w-0 flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 outline-none focus:border-[#A8E6CF]"
               />
               <input
                 value={l.quantite}

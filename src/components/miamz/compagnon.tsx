@@ -222,7 +222,7 @@ export default function Compagnon() {
   return (
     <div
       data-regard={aSouris ? "souris" : "idle"}
-      className="pointer-events-none fixed bottom-[max(env(safe-area-inset-bottom),1rem)] right-3 z-40 sm:right-5"
+      className="pointer-events-none fixed bottom-[calc(4.5rem+max(env(safe-area-inset-bottom),0.25rem))] right-3 z-40 sm:bottom-[max(env(safe-area-inset-bottom),1rem)] sm:right-5"
     >
       <div className="flex flex-col items-end gap-2">
         <div

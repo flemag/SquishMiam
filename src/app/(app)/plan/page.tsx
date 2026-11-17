@@ -41,7 +41,7 @@ export default async function PlanPage({
 
   return (
     <main>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-[#4A6741]">La semaine des repas</h1>
           <p className="text-sm text-gray-500">
