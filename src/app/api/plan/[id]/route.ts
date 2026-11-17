@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { SLOTS, type Slot } from "@/lib/plan";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const body = await req.json().catch(() => ({}));
-  const data: { date?: Date; slot?: Slot; servings?: number; recipeId?: string } = {};
+  // Typage explicite en entrée "unchecked" : ce code part du principe que le client
+  // Prisma est généré depuis le schéma courant (le build lance `prisma generate`).
+  const data: Prisma.MealPlanEntryUncheckedUpdateInput = {};
   if (typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) && !isNaN(new Date(body.date).getTime())) {
     data.date = new Date(body.date);
   }
