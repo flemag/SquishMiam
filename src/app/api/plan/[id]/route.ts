@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { SLOTS, type Slot } from "@/lib/plan";
 import { NextResponse } from "next/server";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -14,11 +15,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const body = await req.json().catch(() => ({}));
-  const data: { date?: Date; slot?: "DEJEUNER" | "DINER"; servings?: number; recipeId?: string } = {};
+  const data: { date?: Date; slot?: Slot; servings?: number; recipeId?: string } = {};
   if (typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date) && !isNaN(new Date(body.date).getTime())) {
     data.date = new Date(body.date);
   }
-  if (body.slot === "DEJEUNER" || body.slot === "DINER") data.slot = body.slot;
+  if ((SLOTS as readonly string[]).includes(body.slot)) data.slot = body.slot as Slot;
   if (Number.isInteger(Number(body.servings)) && Number(body.servings) >= 1 && Number(body.servings) <= 12) {
     data.servings = Number(body.servings);
   }

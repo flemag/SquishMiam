@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import type { Slot } from "@/lib/plan";
+import { SLOTS, type Slot } from "@/lib/plan";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   const recipeId = typeof body.recipeId === "string" ? body.recipeId : "";
   const servings = Number(body.servings ?? 2);
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !["DEJEUNER", "DINER"].includes(slot) || !recipeId) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(SLOTS as readonly string[]).includes(slot) || !recipeId) {
     return NextResponse.json({ error: "Paramètres invalides" }, { status: 400 });
   }
   const dateObj = new Date(date);
@@ -70,7 +70,7 @@ export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const date = searchParams.get("date") ?? "";
   const slot = searchParams.get("slot") ?? "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !["DEJEUNER", "DINER"].includes(slot) || isNaN(new Date(date).getTime())) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(SLOTS as readonly string[]).includes(slot) || isNaN(new Date(date).getTime())) {
     return NextResponse.json({ error: "Paramètres invalides" }, { status: 400 });
   }
   await db.mealPlanEntry.deleteMany({

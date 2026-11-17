@@ -22,10 +22,11 @@ export function getWeekDates(date: Date): Date[] {
   return dates;
 }
 
-export const SLOTS = ["DEJEUNER", "DINER"] as const;
+export const SLOTS = ["PETIT_DEJEUNER", "DEJEUNER", "DINER"] as const;
 export type Slot = (typeof SLOTS)[number];
 
 export const SLOT_LABELS: Record<Slot, string> = {
+  PETIT_DEJEUNER: "Petit-déjeuner",
   DEJEUNER: "Déjeuner",
   DINER: "Dîner",
 };

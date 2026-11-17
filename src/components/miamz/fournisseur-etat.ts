@@ -1,5 +1,9 @@
 import type { EvenementMiamz } from "@/lib/moteur-humeur";
+import { SLOTS } from "@/lib/plan";
 import type { EtatMiamz } from "./contexte";
+
+/** Semaine complète = tous les services des 7 jours planifiés (SLOTS × 7). */
+const REPAS_SEMAINE_COMPLETE = SLOTS.length * 7;
 
 /**
  * Réduction pure de l'état du compagnon : le provider (fournisseur.tsx) la
@@ -20,7 +24,7 @@ export function prochainEtat(
 
   if (evenement === "repas-planifie") {
     const repasSemaine = etat.repasSemaine + 1;
-    if (repasSemaine >= 14 && !etat.semaineCompleteEmise) {
+    if (repasSemaine >= REPAS_SEMAINE_COMPLETE && !etat.semaineCompleteEmise) {
       return {
         ...etat,
         repasSemaine,

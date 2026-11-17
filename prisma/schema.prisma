@@ -75,6 +75,7 @@ model MealPlanEntry {
 }
 
 enum MealSlot {
+  PETIT_DEJEUNER
   DEJEUNER
   DINER
 }

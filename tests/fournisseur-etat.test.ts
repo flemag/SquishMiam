@@ -32,13 +32,22 @@ describe("prochainEtat", () => {
     expect(recette.dernierEvenement?.type).toBe("recette-creee");
   });
 
-  it("émet semaine-complete une seule fois à 14 repas", () => {
-    const premier = prochainEtat(
+  it("émet semaine-complete une seule fois quand la semaine est pleine (3 services × 7 jours = 21)", () => {
+    // 3 services par jour désormais : pas d'émission à l'ancien seuil de 14…
+    const quatorze = prochainEtat(
       { ...initial, repasSemaine: 13 },
       "repas-planifie",
       new Date()
     );
-    expect(premier.repasSemaine).toBe(14);
+    expect(quatorze.dernierEvenement?.type).toBe("repas-planifie");
+    expect(quatorze.semaineCompleteEmise).toBe(false);
+    // …mais émission au 21e repas.
+    const premier = prochainEtat(
+      { ...initial, repasSemaine: 20 },
+      "repas-planifie",
+      new Date()
+    );
+    expect(premier.repasSemaine).toBe(21);
     expect(premier.dernierEvenement?.type).toBe("semaine-complete");
     expect(premier.semaineCompleteEmise).toBe(true);
     const apres = prochainEtat(premier, "repas-retire", new Date());

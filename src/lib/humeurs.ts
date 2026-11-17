@@ -74,7 +74,7 @@ const MESSAGES: Record<HumeurId, string[]> = {
   ],
   fete: [
     "SEMAINE COMPLÈTE ! Danse du grain de riz !",
-    "14 repas planifiés, je folle !",
+    "Tous les repas de la semaine, je folle !",
     "Tu as tué la charge mentale ! Confettis de sésame !",
   ],
   concentre: [
