@@ -110,6 +110,7 @@ Décisions prises au niveau du design, à corriger si Steve préfère autrement 
 - **Rythme de validation des animations** : 3 passes avec validation de Steve à chaque passe — (1) esquisses statiques des humeurs clés, (2) rig + animations des 4-5 humeurs principales, (3) variantes restantes.
 - **Authentification** : Google OAuth comme seule méthode garantie ; magic link email en option si un domaine vérifié est disponible.
 - **Mode dégradé IA** : quota OpenRouter gratuit épuisé → Miamz passe en « charme local » (réponses modèles prédéfinies + moteur d'humeur côté client, qui ne consomme jamais d'IA).
+- **3 services par jour** (amendement Steve, 2026-11-17) : petit-déjeuner + déjeuner + dîner → une semaine complète = 21 repas (seuil calculé depuis le catalogue des créneaux, plus une valeur en dur).
 
 ## Réponses de Steve (round builder-check — intégrées ci-dessus)
 
