@@ -2,7 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import RecetteCard from "@/components/recettes/recette-card";
+import RecettesClient from "@/components/recettes/recettes-client";
 
 export default async function RecettesPage() {
   const session = await auth();
@@ -21,10 +21,7 @@ export default async function RecettesPage() {
           <h1 className="text-2xl font-semibold text-miamz-vert">Mes recettes</h1>
           <p className="text-sm text-texte-doux">{recipes.length} recette(s) dans ta cuisine.</p>
         </div>
-        <Link
-          href="/recettes/nouvelle"
-          className="bouton"
-        >
+        <Link href="/recettes/nouvelle" className="bouton">
           + Nouvelle recette
         </Link>
       </div>
@@ -36,14 +33,17 @@ export default async function RecettesPage() {
           <p className="mt-1 text-sm text-texte-tres-doux">Ajoute ta première recette pour commencer à planifier.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {recipes.map((r) => (
-            <RecetteCard
-              key={r.id}
-              recette={{ id: r.id, title: r.title, servings: r.servings, minutes: r.minutes, tags: r.tags }}
-            />
-          ))}
-        </div>
+        <RecettesClient
+          recettes={recipes.map((r) => ({
+            id: r.id,
+            title: r.title,
+            servings: r.servings,
+            minutes: r.minutes,
+            tags: r.tags,
+            ingredients: r.ingredients,
+            steps: r.steps,
+          }))}
+        />
       )}
     </main>
   );

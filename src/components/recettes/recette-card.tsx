@@ -1,9 +1,4 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-type RecetteResume = {
+type RecetteCarte = {
   id: string;
   title: string;
   servings: number;
@@ -11,19 +6,13 @@ type RecetteResume = {
   tags: string[];
 };
 
-export default function RecetteCard({ recette }: { recette: RecetteResume }) {
-  const router = useRouter();
-  const [enCours, setEnCours] = useState(false);
-
-  async function supprimer() {
-    setEnCours(true);
-    await fetch(`/api/recipes/${recette.id}`, { method: "DELETE" });
-    router.refresh();
-    setEnCours(false);
-  }
-
+/**
+ * Carte recette : un unique <button> (plus d'interactif imbriqué) — le tap
+ * ouvre la fiche en bottom sheet ; la suppression vit dans la fiche.
+ */
+export default function RecetteCard({ recette, onOuvrir }: { recette: RecetteCarte; onOuvrir: () => void }) {
   return (
-    <div className="carte p-5 transition">
+    <button type="button" onClick={onOuvrir} className="carte w-full p-5 text-left transition">
       <h3 className="font-semibold text-foreground">{recette.title}</h3>
       <p className="mt-1 text-sm text-texte-doux">
         {recette.servings} portion{recette.servings > 1 ? "s" : ""}
@@ -38,13 +27,6 @@ export default function RecetteCard({ recette }: { recette: RecetteResume }) {
           ))}
         </div>
       )}
-      <button
-        onClick={supprimer}
-        disabled={enCours}
-        className="mt-4 text-xs text-danger/70 hover:text-danger"
-      >
-        {enCours ? "Suppression…" : "Supprimer"}
-      </button>
-    </div>
+    </button>
   );
 }
