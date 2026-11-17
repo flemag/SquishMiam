@@ -12,8 +12,98 @@
   --miamz-vert: #4a6741;
   --miamz-corail: #e07a5f;
 
-  --background: var(--miamz-creme);
+  /*
+   * Thème par défaut : « manga » (spec 2d). Les autres thèmes surrisent
+   * via html[data-theme="…"] — voir le tableau des palettes dans la spec.
+   */
+  --background: #fff3d6;
   --foreground: #3a2e2e;
+
+  /* Fond de scène + voile des barres + opacité des doodles. */
+  --fond-scene: #fff3d6;
+  --fond-voile: rgba(255, 243, 214, 0.92);
+  --opacite-doodles: 0.16;
+
+  /* Traits et géométrie. */
+  --trait: #3a2e2e;
+  --trait-bouton: #3a2e2e;
+  --epaisseur-trait: 2.5px;
+  --rayon-carte: 16px;
+  --rayon-bouton: 14px;
+  --rayon-champ: 14px;
+
+  /* Ombres et boutons. */
+  --ombre-carte: 5px 6px 0 #3a2e2e;
+  --bouton-fond: #e07a5f;
+  --bouton-texte: #ffffff;
+  --ombre-bouton: 0 4px 0 #3a2e2e;
+  --ombre-bouton-press: 0 1px 0 #3a2e2e;
+  --bouton-2-fond: #ffffff;
+  --bouton-2-texte: #3a2e2e;
+  --ombre-bouton-2: 0 4px 0 #3a2e2e;
+  --ombre-bouton-2-press: 0 1px 0 #3a2e2e;
+
+  /* Puces (tags). */
+  --puce-fond: #a8e6cf;
+  --puce-bordure: 2px solid #3a2e2e;
+  --puce-texte: #2e5340;
+
+  /* Tokens sémantiques de texte/bordure (remplacent les gris Tailwind). */
+  --texte-doux: rgba(58, 46, 46, 0.64);
+  --texte-tres-doux: rgba(58, 46, 46, 0.45);
+  --bordure: rgba(58, 46, 46, 0.12);
+  --danger: #b0413e;
+}
+
+/* Thème « doux » — Nappe & confiture. */
+html[data-theme="doux"] {
+  --background: #fff9e6;
+  --fond-scene: linear-gradient(160deg, #fff9e6 0%, #ffedf1 55%, #fbe3ec 100%);
+  --fond-voile: rgba(255, 249, 230, 0.92);
+  --opacite-doodles: 0.08;
+  --trait: rgba(58, 46, 46, 0.1);
+  --trait-bouton: transparent;
+  --epaisseur-trait: 1.5px;
+  --rayon-carte: 20px;
+  --rayon-bouton: 999px;
+  --rayon-champ: 999px;
+  --ombre-carte: 0 6px 18px rgba(58, 46, 46, 0.06);
+  --bouton-fond: #4a6741;
+  --bouton-texte: #ffffff;
+  --ombre-bouton: 0 3px 0 rgba(58, 46, 46, 0.18);
+  --ombre-bouton-press: 0 1px 0 rgba(58, 46, 46, 0.18);
+  --bouton-2-fond: rgba(255, 255, 255, 0.85);
+  --bouton-2-texte: #3a2e2e;
+  --ombre-bouton-2: 0 3px 0 rgba(58, 46, 46, 0.12);
+  --ombre-bouton-2-press: 0 1px 0 rgba(58, 46, 46, 0.12);
+  --puce-fond: rgba(168, 230, 207, 0.5);
+  --puce-bordure: none;
+}
+
+/* Thème « pique-nique » — vichy rose chaleureux. */
+html[data-theme="pique-nique"] {
+  --background: #fff7ea;
+  --fond-scene: repeating-linear-gradient(0deg, rgba(255, 181, 194, 0.2) 0 18px, transparent 18px 36px),
+    repeating-linear-gradient(90deg, rgba(255, 181, 194, 0.2) 0 18px, transparent 18px 36px), #fff7ea;
+  --fond-voile: rgba(255, 247, 234, 0.92);
+  --opacite-doodles: 0.15;
+  --trait: rgba(224, 122, 95, 0.22);
+  --trait-bouton: transparent;
+  --epaisseur-trait: 1.5px;
+  --rayon-carte: 18px;
+  --rayon-bouton: 16px;
+  --rayon-champ: 16px;
+  --ombre-carte: 0 8px 20px rgba(224, 122, 95, 0.14);
+  --bouton-fond: #e07a5f;
+  --bouton-texte: #ffffff;
+  --ombre-bouton: 0 3px 0 #c96a51;
+  --ombre-bouton-press: 0 1px 0 #c96a51;
+  --bouton-2-fond: rgba(255, 181, 194, 0.35);
+  --bouton-2-texte: #3a2e2e;
+  --ombre-bouton-2: 0 3px 0 rgba(224, 122, 95, 0.35);
+  --ombre-bouton-2-press: 0 1px 0 rgba(224, 122, 95, 0.35);
+  --puce-fond: rgba(168, 230, 207, 0.5);
+  --puce-bordure: none;
 }
 
 @theme inline {
@@ -25,6 +115,11 @@
   --color-miamz-lilas: var(--miamz-lilas);
   --color-miamz-vert: var(--miamz-vert);
   --color-miamz-corail: var(--miamz-corail);
+  --color-texte-doux: var(--texte-doux);
+  --color-texte-tres-doux: var(--texte-tres-doux);
+  --color-bordure: var(--bordure);
+  --color-danger: var(--danger);
+  --color-fond-voile: var(--fond-voile);
   --font-sans: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -157,14 +252,154 @@ body {
 }
 
 /*
+ * Fond animé par thème (plan 2d) — fixe, derrière tout, jamais cliquable.
+ * Le damier n'existe que pour « manga » ; les doodles partagent la même
+ * banque SVG avec une opacité propre à chaque thème.
+ */
+.fond-anime {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--fond-scene);
+}
+
+.fond-damier {
+  display: none;
+  position: absolute;
+  inset: -90px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 181, 194, 0.2) 0 40px, transparent 40px 80px),
+    repeating-linear-gradient(0deg, rgba(168, 230, 207, 0.18) 0 40px, transparent 40px 80px);
+  animation: fond-defiler 9s linear infinite;
+}
+
+html[data-theme="manga"] .fond-damier {
+  display: block;
+}
+
+@keyframes fond-defiler {
+  to { transform: translate(-80px, 80px); }
+}
+
+.fond-doodles {
+  position: absolute;
+  inset: 0;
+  opacity: var(--opacite-doodles);
+}
+
+.fond-d {
+  position: absolute;
+  transform: rotate(var(--r, 0deg));
+  animation: fond-flotter 18s ease-in-out infinite;
+}
+
+@keyframes fond-flotter {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50% { transform: translateY(-18px) rotate(calc(var(--r, 0deg) + 9deg)); }
+}
+
+/*
+ * Classes sémantiques du thème — toute l'app s'habille avec ces classes,
+ * les valeurs changent par thème via les variables ci-dessus.
+ */
+@layer components {
+  .carte {
+    background: #ffffff;
+    border: var(--epaisseur-trait) solid var(--trait);
+    border-radius: var(--rayon-carte);
+    box-shadow: var(--ombre-carte);
+  }
+
+  .bouton,
+  .bouton-secondaire,
+  .bouton-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0 1.25rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: var(--rayon-bouton);
+    cursor: pointer;
+    transition: transform 80ms ease, box-shadow 80ms ease, opacity 120ms ease;
+  }
+
+  .bouton {
+    background: var(--bouton-fond);
+    color: var(--bouton-texte);
+    border: var(--epaisseur-trait) solid var(--trait-bouton);
+    box-shadow: var(--ombre-bouton);
+  }
+  .bouton:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: var(--ombre-bouton-press);
+  }
+
+  .bouton-secondaire {
+    background: var(--bouton-2-fond);
+    color: var(--bouton-2-texte);
+    border: var(--epaisseur-trait) solid var(--trait-bouton);
+    box-shadow: var(--ombre-bouton-2);
+  }
+  .bouton-secondaire:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: var(--ombre-bouton-2-press);
+  }
+
+  .bouton-danger {
+    background: rgba(176, 65, 62, 0.1);
+    color: var(--danger);
+    border: none;
+    box-shadow: none;
+  }
+
+  .bouton:disabled,
+  .bouton-secondaire:disabled,
+  .bouton-danger:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .puce {
+    display: inline-block;
+    background: var(--puce-fond);
+    color: var(--puce-texte);
+    border: var(--puce-bordure);
+    border-radius: 999px;
+    padding: 0.125rem 0.6rem;
+    font-size: 0.75rem;
+    line-height: 1.1rem;
+  }
+
+  .champ {
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    background: #ffffff;
+    color: var(--foreground);
+    border: var(--epaisseur-trait) solid var(--trait);
+    border-radius: var(--rayon-champ);
+    outline: none;
+  }
+  .champ:focus {
+    border-color: var(--miamz-menthe);
+  }
+}
+
+/*
  * prefers-reduced-motion : tout s'arrête (y compris l'anim inline du
- * compagnon, grâce à !important) ; l'humeur reste lisible à l'arrêt
- * (bouche, yeux mi-clos de endormi, regard).
+ * compagnon et le fond animé, grâce à !important) ; l'humeur reste lisible
+ * à l'arrêt (bouche, yeux mi-clos de endormi, regard).
  */
 @media (prefers-reduced-motion: reduce) {
   .miamz-anim,
   .miamz-yeux,
-  .miamz-bulle {
+  .miamz-bulle,
+  .fond-d,
+  .fond-damier {
     animation: none !important;
   }
 }

@@ -41,7 +41,7 @@ function ConnexionContent() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#FFF9E6] px-4">
+    <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-lg shadow-[#FFB5C2]/20">
         <div className="mb-6 text-center">
           <div className="flex justify-center">

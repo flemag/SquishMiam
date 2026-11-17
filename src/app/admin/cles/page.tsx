@@ -19,7 +19,7 @@ export default async function AdminClesPage() {
   const now = new Date();
 
   return (
-    <main className="min-h-screen bg-[#FFF9E6] p-6">
+    <main className="min-h-screen p-6">
       <div className="mx-auto max-w-4xl">
         <h1 className="mb-2 text-2xl font-semibold text-[#4A6741]">Clés d&apos;activation</h1>
         <p className="mb-6 text-sm text-gray-500">Génère des clés, regarde leur statut, révoque à la demande.</p>
