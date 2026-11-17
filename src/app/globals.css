@@ -51,3 +51,120 @@ body {
   transform-origin: center;
   transform-box: fill-box;
 }
+
+/*
+ * Compagnon vivant (plan 2a) — animations transform/opacity uniquement
+ * (compositor GPU). Le nom de keyframe est appliqué inline sur .miamz-anim
+ * par compagnon.tsx (ANIMATIONS) ; ici : l'origine de pose et les keyframes.
+ * Origine au bas de la boulette (100px 140px en unités SVG) : les rotations
+ * font pivoter autour de la base, comme une figurine à ressort.
+ */
+.miamz-anim {
+  transform-origin: 100px 140px;
+}
+
+@keyframes miamz-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes miamz-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes miamz-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes miamz-droop {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(2.5px) rotate(2deg); }
+}
+@keyframes miamz-snore {
+  0%, 100% { transform: scale(1); }
+  50% { transform: translateY(-1px) scale(1.02); }
+}
+@keyframes miamz-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes miamz-jump {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  15% { transform: translateY(0) scale(1.05, 0.95); }
+  50% { transform: translateY(-10px) scale(0.97, 1.03); }
+  80% { transform: translateY(0) scale(1.05, 0.95); }
+}
+@keyframes miamz-wiggle {
+  0%, 100% { transform: rotate(-2deg); }
+  25% { transform: rotate(2deg); }
+  50% { transform: rotate(-1.5deg); }
+  75% { transform: rotate(1.5deg); }
+}
+@keyframes miamz-dance {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  25% { transform: rotate(0deg) translateY(-4px); }
+  50% { transform: rotate(4deg) translateY(0); }
+  75% { transform: rotate(0deg) translateY(-4px); }
+}
+@keyframes miamz-tremble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1.2px); }
+  75% { transform: translateX(1.2px); }
+}
+@keyframes miamz-pop {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.06); }
+}
+@keyframes miamz-pump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.04); }
+}
+@keyframes miamz-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes miamz-tilt {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(-3deg); }
+}
+@keyframes miamz-rebond {
+  0% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-8px) scale(0.96, 1.04); }
+  55% { transform: translateY(0) scale(1.06, 0.94); }
+  75% { transform: translateY(-3px) scale(0.99, 1.01); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+@keyframes miamz-regard-idle {
+  0%, 100% { transform: translate(3px, 1px); }
+  40% { transform: translate(-3px, -1.5px); }
+}
+@keyframes miamz-bulle {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Endormi : paupières mi-closes, plus de clignement ni de dérive du regard. */
+.miamz-anim[data-humeur="endormi"] .miamz-yeux {
+  animation: none;
+  transform: scaleY(0.35);
+}
+
+/* Dérive idle du regard (tactile, avant tout mousemove). */
+[data-regard="idle"] .miamz-yeux {
+  animation: miamz-regard-idle 6s ease-in-out infinite;
+}
+
+.miamz-bulle {
+  animation: miamz-bulle 160ms ease-out;
+}
+
+/*
+ * prefers-reduced-motion : tout s'arrête (y compris l'anim inline du
+ * compagnon, grâce à !important) ; l'humeur reste lisible à l'arrêt
+ * (bouche, yeux mi-clos de endormi, regard).
+ */
+@media (prefers-reduced-motion: reduce) {
+  .miamz-anim,
+  .miamz-yeux,
+  .miamz-bulle {
+    animation: none !important;
+  }
+}

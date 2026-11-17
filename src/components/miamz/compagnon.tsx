@@ -1,0 +1,257 @@
+"use client";
+
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { pickMessage, pickVariante, type HumeurId } from "@/lib/humeurs";
+import { evaluerHumeur, type ContexteMiamz } from "@/lib/moteur-humeur";
+import { regardVers } from "@/lib/regard";
+import { MiamzContext } from "./contexte";
+import MiamzSvg, { type MiamzSvgProps } from "./svg";
+
+/** Bouche par humeur ; défaut sourire. */
+const BOUCHES: Partial<Record<HumeurId, MiamzSvgProps["bouche"]>> = {
+  endormi: "baille",
+  affame: "rond",
+  surpris: "rond",
+  fete: "rond",
+};
+
+/**
+ * Animation d'humeur : une par (humeur, variante) — l'index du tableau suit
+ * pickVariante et VARIANTES_PAR_HUMEUR. Appliquée inline sur le groupe
+ * .miamz-anim pour éviter toute guerre de spécificité avec le rebond et
+ * prefers-reduced-motion (les keyframes vivent dans globals.css).
+ */
+const ANIMATIONS: Record<HumeurId, string[]> = {
+  content: [
+    "miamz-bob 3.4s ease-in-out infinite",
+    "miamz-sway 4.2s ease-in-out infinite",
+    "miamz-breathe 3.8s ease-in-out infinite",
+    "miamz-tilt 5s ease-in-out infinite",
+  ],
+  fier: [
+    "miamz-pump 2.6s ease-in-out infinite",
+    "miamz-pop 2.2s ease-in-out infinite",
+    "miamz-bob 3s ease-in-out infinite",
+  ],
+  decu: [
+    "miamz-droop 3.6s ease-in-out infinite",
+    "miamz-droop 4.6s ease-in-out infinite",
+    "miamz-breathe 5s ease-in-out infinite",
+  ],
+  affame: [
+    "miamz-bob 1.8s ease-in-out infinite",
+    "miamz-wiggle 2s ease-in-out infinite",
+    "miamz-pop 1.8s ease-in-out infinite",
+  ],
+  repu: [
+    "miamz-breathe 4.4s ease-in-out infinite",
+    "miamz-droop 5s ease-in-out infinite",
+    "miamz-float 5.5s ease-in-out infinite",
+  ],
+  endormi: [
+    "miamz-snore 5s ease-in-out infinite",
+    "miamz-snore 6.5s ease-in-out infinite",
+    "none",
+  ],
+  fete: [
+    "miamz-dance 1.8s ease-in-out infinite",
+    "miamz-jump 1.4s ease-in-out infinite",
+    "miamz-spin 2.2s linear infinite",
+    "miamz-wiggle 1.2s ease-in-out infinite",
+  ],
+  concentre: ["none", "miamz-breathe 4.8s ease-in-out infinite", "miamz-tilt 6s ease-in-out infinite"],
+  calin: [
+    "miamz-float 4.6s ease-in-out infinite",
+    "miamz-sway 5s ease-in-out infinite",
+    "miamz-tilt 6s ease-in-out infinite",
+  ],
+  taquin: [
+    "miamz-wiggle 1.8s ease-in-out infinite",
+    "miamz-tilt 3.4s ease-in-out infinite",
+    "miamz-bob 2.6s ease-in-out infinite",
+  ],
+  inquiet: [
+    "miamz-tremble 1.2s ease-in-out infinite",
+    "miamz-tremble 1.6s ease-in-out infinite",
+    "miamz-droop 4s ease-in-out infinite",
+  ],
+  surpris: [
+    "miamz-pop 1.2s ease-in-out infinite",
+    "miamz-jump 1.6s ease-in-out infinite",
+    "miamz-tremble 1s ease-in-out infinite",
+  ],
+  motive: [
+    "miamz-bob 2.4s ease-in-out infinite",
+    "miamz-jump 2.2s ease-in-out infinite",
+    "miamz-pump 2.4s ease-in-out infinite",
+  ],
+  relax: [
+    "miamz-float 5s ease-in-out infinite",
+    "miamz-breathe 5.5s ease-in-out infinite",
+    "miamz-sway 6s ease-in-out infinite",
+    "miamz-tilt 7s ease-in-out infinite",
+  ],
+};
+
+const MINUTE = 60_000;
+const DUREE_BULLE_MS = 6000;
+const DUREE_REBOND_MS = 600;
+/** Un événement de moins de 2 min justifie une bulle spontanée. */
+const EVENEMENT_FRAIS_MS = 2 * MINUTE;
+
+const graineMinute = () => Math.floor(Date.now() / MINUTE);
+
+/**
+ * Widget compagnon vivant : fixed bas-droite, zone cliquable = le SVG seul
+ * (le conteneur ne capte aucun clic, la bulle ne bloque rien). Recalcule
+ * l'humeur au montage, toutes les 30 s et à chaque événement du contexte ;
+ * tolère un contexte absent (avant le Task 5) : horloge seule.
+ */
+export default function Compagnon() {
+  const miamz = useContext(MiamzContext);
+  const [humeur, setHumeur] = useState<HumeurId>("content");
+  const [variante, setVariante] = useState(0);
+  const [bulle, setBulle] = useState<string | null>(null);
+  const [rebond, setRebond] = useState(false);
+  const [regard, setRegard] = useState({ dx: 0, dy: 0 });
+  const [aSouris, setASouris] = useState(false);
+
+  const racineRef = useRef<HTMLDivElement>(null);
+  const humeurPrecedente = useRef<HumeurId>("content");
+  const minuteurBulle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const minuteurRebond = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const montreBulle = useCallback((h: HumeurId) => {
+    setBulle(pickMessage(h, graineMinute()));
+    if (minuteurBulle.current) clearTimeout(minuteurBulle.current);
+    minuteurBulle.current = setTimeout(() => setBulle(null), DUREE_BULLE_MS);
+  }, []);
+
+  /** Humeur = horloge + événements du contexte, avec l'âge rafraîchi. */
+  const recalcule = useCallback(() => {
+    const maintenant = new Date();
+    let dernierEvenement: ContexteMiamz["dernierEvenement"] = null;
+    if (miamz?.dernierEvenement) {
+      const { type } = miamz.dernierEvenement;
+      const horodatage = miamz.dernierEvenementHorodatage;
+      const age =
+        horodatage === null
+          ? miamz.dernierEvenement.ilYAms
+          : Math.max(0, maintenant.getTime() - horodatage);
+      dernierEvenement = { type, ilYAms: age };
+    }
+
+    const humeurSuivante = evaluerHumeur({
+      maintenant,
+      repasSemaine: miamz?.repasSemaine ?? 0,
+      dernierEvenement,
+    });
+    // Graine = minute courante : stable intra-minute, varié inter-minutes.
+    const graine = Math.floor(maintenant.getTime() / MINUTE);
+    setHumeur(humeurSuivante);
+    setVariante(pickVariante(humeurSuivante, graine));
+
+    if (humeurSuivante !== humeurPrecedente.current) {
+      humeurPrecedente.current = humeurSuivante;
+      // Bulle spontanée uniquement pour un changement causé par un événement
+      // frais — jamais la nuit (endormi dort en silence).
+      const evenementFrais =
+        dernierEvenement !== null && dernierEvenement.ilYAms < EVENEMENT_FRAIS_MS;
+      if (evenementFrais && humeurSuivante !== "endormi") montreBulle(humeurSuivante);
+    }
+  }, [miamz, montreBulle]);
+
+  // Au montage, à chaque événement du contexte (recalcule change), et toutes les 30 s.
+  useEffect(() => {
+    recalcule();
+    const intervalle = setInterval(recalcule, 30_000);
+    return () => clearInterval(intervalle);
+  }, [recalcule]);
+
+  // Regard : suit la souris (desktop), dérive au repos (tactile). Jamais en reduced-motion.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let image = 0;
+    const bouge = (e: MouseEvent) => {
+      setASouris(true);
+      if (image) return;
+      image = requestAnimationFrame(() => {
+        image = 0;
+        const boite = racineRef.current?.getBoundingClientRect();
+        if (!boite) return;
+        const suivant = regardVers(e.clientX, e.clientY, {
+          x: boite.x,
+          y: boite.y,
+          largeur: boite.width,
+          hauteur: boite.height,
+        });
+        setRegard((precedent) =>
+          precedent.dx === suivant.dx && precedent.dy === suivant.dy ? precedent : suivant
+        );
+      });
+    };
+    window.addEventListener("mousemove", bouge);
+    return () => {
+      window.removeEventListener("mousemove", bouge);
+      if (image) cancelAnimationFrame(image);
+    };
+  }, []);
+
+  // Nettoyage des minuteries de bulle et de rebond.
+  useEffect(
+    () => () => {
+      if (minuteurBulle.current) clearTimeout(minuteurBulle.current);
+      if (minuteurRebond.current) clearTimeout(minuteurRebond.current);
+    },
+    []
+  );
+
+  const auClic = () => {
+    // rAF pour rejouer l'animation même si un rebond était en cours.
+    setRebond(false);
+    requestAnimationFrame(() => setRebond(true));
+    if (minuteurRebond.current) clearTimeout(minuteurRebond.current);
+    minuteurRebond.current = setTimeout(() => setRebond(false), DUREE_REBOND_MS);
+    montreBulle(humeur);
+  };
+
+  const animation = rebond
+    ? "miamz-rebond 600ms cubic-bezier(0.34, 1.56, 0.64, 1)"
+    : (ANIMATIONS[humeur][variante] ?? ANIMATIONS[humeur][0] ?? "");
+
+  return (
+    <div
+      data-regard={aSouris ? "souris" : "idle"}
+      className="pointer-events-none fixed bottom-[max(env(safe-area-inset-bottom),1rem)] right-3 z-40 sm:right-5"
+    >
+      <div className="flex flex-col items-end gap-2">
+        <div
+          aria-live="polite"
+          className={`miamz-bulle max-w-[min(16rem,calc(100vw-2rem))] rounded-2xl rounded-br-sm border border-[#e5dccb] bg-white/95 px-3 py-2 text-center text-sm text-[#4a6741] shadow-md ${
+            bulle ? "" : "hidden"
+          }`}
+        >
+          {bulle}
+        </div>
+        <button
+          type="button"
+          onClick={auClic}
+          aria-label="Miamz, ton compagnon repas"
+          className="pointer-events-auto block rounded-full focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
+        >
+          <div ref={racineRef}>
+            <MiamzSvg
+              taille={72}
+              yeux={regard}
+              bouche={BOUCHES[humeur] ?? "sourire"}
+              pose={humeur}
+              variante={variante}
+              animation={animation}
+              className="h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
+            />
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
