@@ -30,13 +30,19 @@ export default function FormulaireArticle({
       return;
     }
 
+    // Le blur du nom n'est pas garanti (Entrée, touche « Go » du clavier mobile) :
+    // le rayon automatique est résolu à l'envoi, pas seulement au blur. Un choix
+    // manuel de l'utilisateur reste prioritaire, même si le nom change ensuite.
+    const rayonFinal = rayonManuel ? rayon : mapToRayon(nomPropre);
+    if (!rayonManuel) setRayon(rayonFinal);
+
     const body: {
       weekStart: string;
       nom: string;
       rayon: string;
       quantite?: number;
       unite?: string;
-    } = { weekStart, nom: nomPropre, rayon };
+    } = { weekStart, nom: nomPropre, rayon: rayonFinal };
 
     const quantitePropre = quantite.trim().replace(",", ".");
     if (quantitePropre !== "") {
