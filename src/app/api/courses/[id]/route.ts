@@ -5,6 +5,12 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 const ARTICLE_DU_PLANNING = "Article du planning — seule la quantité est modifiable";
+const DEJA_DANS_LA_LISTE = "Déjà dans la liste pour cette semaine";
+
+// Même convention de clé que POST /api/courses/item et la réconciliation.
+function cleDeFusion(nom: string, unite: string | null): string {
+  return `${nom.trim().toLowerCase()}|${unite ?? ""}`;
+}
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -27,6 +33,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const data: Prisma.GroceryListItemUncheckedUpdateInput = {};
+  // Valeurs cibles de l'identité, pour la détection de collision avant écriture.
+  let nomCible = item.nom;
+  let uniteCible = item.unite;
+  let identiteModifiee = false;
 
   if ("checked" in body) {
     if (typeof body.checked !== "boolean") {
@@ -58,17 +68,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: "Nom invalide" }, { status: 400 });
     }
     data.nom = nom;
+    nomCible = nom;
+    identiteModifiee = true;
   }
 
   if ("unite" in body) {
     if (body.unite === null) {
       data.unite = null;
+      uniteCible = null;
+      identiteModifiee = true;
     } else if (typeof body.unite === "string") {
       const unite = body.unite.trim();
       if (unite.length > 20) {
         return NextResponse.json({ error: "Unité invalide" }, { status: 400 });
       }
       data.unite = unite || null;
+      uniteCible = unite || null;
+      identiteModifiee = true;
     } else {
       return NextResponse.json({ error: "Unité invalide" }, { status: 400 });
     }
@@ -81,8 +97,30 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data.rayon = body.rayon;
   }
 
-  const updated = await db.groceryListItem.update({ where: { id }, data });
-  return NextResponse.json({ item: updated });
+  // Renommer ou changer l'unité peut heurter une autre ligne de la semaine : la
+  // comparaison se fait en JS sur la clé normalisée (l'index SQL est sensible à la
+  // casse), et seule une ligne visible bloque.
+  if (identiteModifiee) {
+    const cle = cleDeFusion(nomCible, uniteCible);
+    const autres = await db.groceryListItem.findMany({
+      where: { ownerId: userId, weekStart: item.weekStart, NOT: { id } },
+      select: { id: true, nom: true, unite: true, masquee: true },
+    });
+    if (autres.some((l) => !l.masquee && cleDeFusion(l.nom, l.unite) === cle)) {
+      return NextResponse.json({ error: DEJA_DANS_LA_LISTE }, { status: 409 });
+    }
+  }
+
+  try {
+    const updated = await db.groceryListItem.update({ where: { id }, data });
+    return NextResponse.json({ item: updated });
+  } catch (err) {
+    // Filet de sécurité : l'index unique peut encore refuser une ligne créée entre-temps.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return NextResponse.json({ error: DEJA_DANS_LA_LISTE }, { status: 409 });
+    }
+    throw err;
+  }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
