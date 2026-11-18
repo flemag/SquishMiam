@@ -2,9 +2,18 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { formatDateIso, formatJourFr, getWeekDates, weekStart } from "@/lib/plan";
-import { formatQuantite } from "@/lib/courses";
 import { RAYONS } from "@/lib/rayons";
 import ListeCourses from "@/components/courses/liste";
+
+type ItemVue = {
+  id: string;
+  nom: string;
+  quantite: number | null;
+  unite: string | null;
+  rayon: string;
+  source: "PLAN" | "MANUEL";
+  checked: boolean;
+};
 
 export default async function CoursesPage({
   searchParams,
@@ -32,16 +41,31 @@ export default async function CoursesPage({
   const next = new Date(debut);
   next.setUTCDate(next.getUTCDate() + 7);
 
+  const versVue = (i: (typeof items)[number]): ItemVue => ({
+    id: i.id,
+    nom: i.nom,
+    quantite: i.quantite,
+    unite: i.unite,
+    rayon: i.rayon,
+    source: i.source,
+    checked: i.checked,
+  });
+
+  // Les lignes masquées sortent des groupes et du compteur : la liste visible
+  // reste honnête, elles vivent dans leur section dédiée en bas de page.
+  const visibles = items.filter((i) => !i.masquee);
+  const masquees = items.filter((i) => i.masquee);
+
   // groupes dans l'ordre du dictionnaire de rayons (pas l'ordre alphabétique SQL)
-  const rayonsOrdonnes = [...new Set(items.map((i) => i.rayon))].sort(
+  const rayonsOrdonnes = [...new Set(visibles.map((i) => i.rayon))].sort(
     (a, b) => RAYONS.indexOf(a as (typeof RAYONS)[number]) - RAYONS.indexOf(b as (typeof RAYONS)[number])
   );
   const groupes = rayonsOrdonnes.map((rayon) => ({
     rayon,
-    items: items.filter((i) => i.rayon === rayon),
+    items: visibles.filter((i) => i.rayon === rayon).map(versVue),
   }));
 
-  const coches = items.filter((i) => i.checked).length;
+  const coches = visibles.filter((i) => i.checked).length;
 
   return (
     <main>
@@ -49,7 +73,7 @@ export default async function CoursesPage({
         <div>
           <h1 className="text-2xl font-semibold text-miamz-vert">Liste de courses</h1>
           <p className="text-sm text-texte-doux">
-            Semaine du {formatJourFr(dates[0])} · {coches}/{items.length} cochés
+            Semaine du {formatJourFr(dates[0])} · {coches}/{visibles.length} cochés
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -70,16 +94,8 @@ export default async function CoursesPage({
 
       <ListeCourses
         weekStart={formatDateIso(debut)}
-        groupes={groupes.map((g) => ({
-          rayon: g.rayon,
-          items: g.items.map((i) => ({
-            id: i.id,
-            nom: i.nom,
-            affichage:
-              i.quantite !== null ? `${i.nom} · ${formatQuantite(i.quantite, i.unite)}` : i.nom,
-            checked: i.checked,
-          })),
-        }))}
+        groupes={groupes}
+        masquees={masquees.map(versVue)}
       />
     </main>
   );
