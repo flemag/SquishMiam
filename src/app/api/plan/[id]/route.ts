@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { SLOTS, type Slot } from "@/lib/plan";
+import { synchroniserCourses } from "@/lib/sync-courses";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
@@ -33,8 +34,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data.recipeId = body.recipeId;
   }
 
+  // Date d'origine lue avant l'update : si le repas change de semaine, les DEUX
+  // semaines (ancienne et nouvelle) doivent être resynchronisées.
+  const dateOrigine = existante.date;
+  const dateCible = data.date instanceof Date ? data.date : dateOrigine;
+
   try {
-    const entry = await db.mealPlanEntry.update({ where: { id }, data });
+    // Liste de courses vivante : update + synchronisation dans la même transaction.
+    const entry = await db.$transaction(async (tx) => {
+      const miseAJour = await tx.mealPlanEntry.update({ where: { id }, data });
+      await synchroniserCourses(tx, userId, [dateOrigine, dateCible]);
+      return miseAJour;
+    });
     return NextResponse.json({ entry });
   } catch {
     return NextResponse.json({ error: "Une case occupe déjà ce créneau" }, { status: 409 });
@@ -51,6 +62,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (!existante || existante.ownerId !== userId) {
     return NextResponse.json({ error: "Entrée introuvable" }, { status: 404 });
   }
-  await db.mealPlanEntry.delete({ where: { id } });
+  // Liste de courses vivante : suppression + synchronisation dans la même transaction.
+  await db.$transaction(async (tx) => {
+    await tx.mealPlanEntry.delete({ where: { id } });
+    await synchroniserCourses(tx, userId, [existante.date]);
+  });
   return NextResponse.json({ ok: true });
 }
