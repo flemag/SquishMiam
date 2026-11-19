@@ -13,6 +13,11 @@ export type EntryVue = {
   title: string;
 };
 
+async function erreurDe(res: Response, defaut: string): Promise<string> {
+  const data = await res.json().catch(() => ({}));
+  return typeof data.error === "string" ? data.error : defaut;
+}
+
 export default function GrillePlan({
   dates,
   slots,
@@ -28,6 +33,9 @@ export default function GrillePlan({
 }) {
   const router = useRouter();
   const [glisse, setGlisse] = useState<string | null>(null);
+  // Un seul déplacement à la fois : la clé identifie le repas en cours de PATCH.
+  const [pending, setPending] = useState<string | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
   const [feuille, setFeuille] = useState<{ date: string; slot: string; entry: EntryVue | null } | null>(null);
 
   function entryDe(date: string, slot: string): EntryVue | undefined {
@@ -36,13 +44,27 @@ export default function GrillePlan({
 
   // Glisser-déposer (bonus desktop) = une modification : aucun événement Miamz.
   async function deplacer(entryId: string, date: string, slot: string) {
-    await fetch(`/api/plan/${entryId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: date.slice(0, 10), slot }),
-    });
+    // Ignore un second drop tant que le PATCH précédent est en vol.
+    if (pending !== null) return;
+    setPending(entryId);
     setGlisse(null);
-    router.refresh();
+    setErreur(null);
+    try {
+      const res = await fetch(`/api/plan/${entryId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: date.slice(0, 10), slot }),
+      });
+      if (res.ok) {
+        router.refresh();
+      } else {
+        setErreur(await erreurDe(res, "Déplacement impossible — réessaie."));
+      }
+    } catch {
+      setErreur("Déplacement impossible — réessaie.");
+    } finally {
+      setPending(null);
+    }
   }
 
   // Toutes les cases occupées sauf celle du repas en édition (sa position
@@ -55,12 +77,19 @@ export default function GrillePlan({
     <div>
       <div className="carte mb-4 flex flex-wrap items-center gap-3 p-4">
         <span className="text-sm text-texte-doux">
-          Glisse une recette d&apos;une case à l&apos;autre, ou clique sur + pour remplir.
+          {pending !== null
+            ? "Déplacement…"
+            : "Glisse une recette d'une case à l'autre, ou clique sur + pour remplir."}
         </span>
+        {erreur && (
+          <span role="status" aria-live="polite" className="text-sm text-danger">
+            {erreur}
+          </span>
+        )}
       </div>
 
       <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[760px] grid-cols-7 gap-2">
+        <div className="grid min-w-[760px] grid-cols-7 gap-2" aria-busy={pending !== null}>
           {dates.map((date) => (
             <div key={date} className="text-center text-xs font-medium text-texte-doux">
               {new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(
@@ -75,7 +104,7 @@ export default function GrillePlan({
                 <div
                   key={`${date}-${slot}`}
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => glisse && deplacer(glisse, date, slot)}
+                  onDrop={() => pending === null && glisse && deplacer(glisse, date, slot)}
                   className={`min-h-28 p-2 transition ${
                     entry ? "carte" : "rounded-2xl border border-dashed border-[#A8E6CF] bg-white/50"
                   }`}

@@ -27,12 +27,21 @@ const STATUT_STYLES: Record<string, string> = {
   revoquee: "bg-[#FFB5C2] text-[#8c2f3f]",
 };
 
+type Message = { texte: string; erreur: boolean };
+
+async function erreurDe(res: Response, defaut: string): Promise<string> {
+  const data = await res.json().catch(() => ({}));
+  return typeof data.error === "string" ? data.error : defaut;
+}
+
 export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
   const router = useRouter();
   const [count, setCount] = useState(5);
   const [duree, setDuree] = useState<number | null>(30);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
   const [enCours, setEnCours] = useState(false);
+  // Une seule révocation à la fois : la clé identifie la ligne en attente.
+  const [revocation, setRevocation] = useState<string | null>(null);
 
   async function generer() {
     setEnCours(true);
@@ -44,20 +53,34 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
         body: JSON.stringify({ count, durationDays: duree }),
       });
       if (res.ok) {
-        setMessage(`${count} clé(s) générée(s) ✨`);
+        setMessage({ texte: `${count} clé(s) générée(s) ✨`, erreur: false });
         router.refresh();
       } else {
-        const data = await res.json().catch(() => ({}));
-        setMessage(data.error ?? "Erreur pendant la génération.");
+        setMessage({ texte: await erreurDe(res, "Erreur pendant la génération."), erreur: true });
       }
+    } catch {
+      setMessage({ texte: "Génération impossible — réessaie.", erreur: true });
     } finally {
       setEnCours(false);
     }
   }
 
   async function revoquer(id: string) {
-    await fetch(`/api/admin/keys/${id}`, { method: "DELETE" });
-    router.refresh();
+    if (revocation !== null) return;
+    setRevocation(id);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/admin/keys/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.refresh();
+      } else {
+        setMessage({ texte: await erreurDe(res, "Révocation impossible — réessaie."), erreur: true });
+      }
+    } catch {
+      setMessage({ texte: "Révocation impossible — réessaie.", erreur: true });
+    } finally {
+      setRevocation(null);
+    }
   }
 
   return (
@@ -97,7 +120,15 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
           >
             {enCours ? "Génération…" : "Générer"}
           </button>
-          {message && <span className="text-sm text-[#4A6741]">{message}</span>}
+          {message && (
+            <span
+              role="status"
+              aria-live="polite"
+              className={`text-sm ${message.erreur ? "text-danger" : "text-[#4A6741]"}`}
+            >
+              {message.texte}
+            </span>
+          )}
         </div>
       </section>
 
@@ -134,9 +165,10 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
                       {k.status !== "REVOKED" && (
                         <button
                           onClick={() => revoquer(k.id)}
-                          className="rounded-full px-3 py-1 text-xs text-danger hover:bg-[#FFB5C2]/20"
+                          disabled={revocation !== null}
+                          className="min-h-11 rounded-full px-3 py-1 text-xs text-danger hover:bg-[#FFB5C2]/20 disabled:opacity-60"
                         >
-                          Révoquer
+                          {revocation === k.id ? "Révocation…" : "Révoquer"}
                         </button>
                       )}
                     </td>

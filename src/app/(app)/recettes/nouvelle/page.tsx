@@ -58,6 +58,8 @@ export default function NouvelleRecettePage() {
         const data = await res.json().catch(() => ({}));
         setMessage(data.error ?? "Recette invalide — vérifie les champs.");
       }
+    } catch {
+      setMessage("Enregistrement impossible — réessaie.");
     } finally {
       setEnCours(false);
     }
