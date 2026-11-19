@@ -53,6 +53,9 @@ export default function ListeCourses({
   const [edition, setEdition] = useState<Edition | null>(null);
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
   const [masqueesOuvertes, setMasqueesOuvertes] = useState(false);
+  // Coches optimistes : la case réagit tout de suite, sans figer les autres
+  // lignes le temps que le rafraîchissement serveur arrive.
+  const [coches, setCoches] = useState<Record<string, boolean>>({});
 
   async function generer() {
     setPending("generation");
@@ -84,6 +87,8 @@ export default function ListeCourses({
   }
 
   async function cocher(id: string, checked: boolean) {
+    // Override immédiat : seule cette ligne est verrouillée pendant l'appel.
+    setCoches((etat) => ({ ...etat, [id]: checked }));
     setPending(`coche:${id}`);
     try {
       const res = await fetch(`/api/courses/${id}`, {
@@ -91,13 +96,25 @@ export default function ListeCourses({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ checked }),
       });
-      if (res.ok && checked) emettre("course-cochee");
-      if (!res.ok) {
-        setMessage({ texte: await erreurDe(res, "Modification impossible — réessaie."), erreur: true });
+      if (res.ok) {
+        if (checked) emettre("course-cochee");
+        router.refresh();
+      } else {
+        // Échec : on rend la main au serveur pour cette ligne.
+        setCoches((etat) => {
+          const suivant = { ...etat };
+          delete suivant[id];
+          return suivant;
+        });
+        setMessage({ texte: await erreurDe(res, "Mise à jour impossible — réessaie."), erreur: true });
       }
-      router.refresh();
     } catch {
-      setMessage({ texte: "Modification impossible — réessaie.", erreur: true });
+      setCoches((etat) => {
+        const suivant = { ...etat };
+        delete suivant[id];
+        return suivant;
+      });
+      setMessage({ texte: "Mise à jour impossible — réessaie.", erreur: true });
     } finally {
       setPending(null);
     }
@@ -243,8 +260,21 @@ export default function ListeCourses({
       {groupes.length === 0 ? (
         <div className="carte p-10 text-center">
           <div className="text-4xl">🛒</div>
-          <p className="mt-3 font-medium text-texte-doux">Liste vide pour cette semaine.</p>
-          <p className="mt-1 text-sm text-texte-tres-doux">Planifie des repas, puis clique sur « Générer ».</p>
+          {masquees.length > 0 ? (
+            <>
+              <p className="mt-3 font-medium text-texte-doux">Tout est masqué pour cette semaine.</p>
+              <p className="mt-1 text-sm text-texte-tres-doux">
+                Affiche tes articles ci-dessous pour les retrouver.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 font-medium text-texte-doux">Liste vide pour cette semaine.</p>
+              <p className="mt-1 text-sm text-texte-tres-doux">
+                Elle se remplit toute seule dès que tu planifies des repas.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         groupes.map((g) => (
@@ -269,21 +299,22 @@ export default function ListeCourses({
             <ul className="flex flex-col gap-1 px-5 pb-4">
               {g.items.map((item) => {
                 const enEdition = edition?.id === item.id;
+                const coche = coches[item.id] ?? item.checked;
                 return (
                   <li key={item.id} className="border-b border-black/5 last:border-b-0">
                     <div className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-[#A8E6CF]/15">
                       <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3">
                         <input
                           type="checkbox"
-                          checked={item.checked}
+                          checked={coche}
                           onChange={(e) => cocher(item.id, e.target.checked)}
-                          disabled={pending !== null}
+                          disabled={pending === `coche:${item.id}`}
                           aria-label={`Cocher ${item.nom}`}
                           className="h-4 w-4 shrink-0 accent-[#4A6741]"
                         />
                         <span
                           className={
-                            item.checked
+                            coche
                               ? "text-sm text-texte-tres-doux line-through"
                               : "text-sm text-foreground"
                           }
@@ -380,7 +411,7 @@ export default function ListeCourses({
 
                         {edition.source === "PLAN" && (
                           <p className="mt-2 text-xs text-texte-doux">
-                            Article du planning — seule la quantité est modifiable
+                            Article du planning — seule la quantité est modifiable, et elle sera recalculée au prochain changement du planning.
                           </p>
                         )}
 

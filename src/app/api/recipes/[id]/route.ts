@@ -42,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
     }
     return misAJour;
-  });
+  }, { timeout: 20_000, maxWait: 5_000 });
   return NextResponse.json({ recipe });
 }
 
@@ -69,6 +69,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     if (entrees.length > 0) {
       await synchroniserCourses(tx, userId, entrees.map((e) => e.date));
     }
-  });
+  }, { timeout: 20_000, maxWait: 5_000 });
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { RAYONS } from "@/lib/rayons";
+import { synchroniserCourses } from "@/lib/sync-courses";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
@@ -111,7 +112,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
   }
 
+  // Le formulaire renvoie toujours nom/unité : seule une vraie bascule de clé
+  // peut libérer une clé exigée par le plan, donc seule celle-ci resynchronise.
+  const identiteChangee =
+    identiteModifiee && (nomCible !== item.nom || uniteCible !== item.unite);
+
   try {
+    // Renommer une ligne manuelle peut libérer une clé que le plan exige : on
+    // resynchronise dans la même transaction pour recréer aussitôt la ligne.
+    if (item.source === "MANUEL" && identiteChangee) {
+      const updated = await db.$transaction(async (tx) => {
+        const ligne = await tx.groceryListItem.update({ where: { id }, data });
+        await synchroniserCourses(tx, userId, [item.weekStart]);
+        return ligne;
+      });
+      return NextResponse.json({ item: updated });
+    }
     const updated = await db.groceryListItem.update({ where: { id }, data });
     return NextResponse.json({ item: updated });
   } catch (err) {
@@ -134,10 +150,15 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Article introuvable" }, { status: 404 });
   }
 
-  // Ligne manuelle : suppression réelle. Ligne du plan : simple masquage, pour que
-  // la réconciliation ne la recrée pas et que « révéler » reste possible.
+  // Ligne manuelle : suppression réelle, suivie d'une resynchronisation dans la
+  // même transaction — une clé exigée par le plan serait sinon absente jusqu'à
+  // la prochaine écriture du plan. Ligne du plan : simple masquage, pour que la
+  // réconciliation ne la recrée pas et que « révéler » reste possible.
   if (item.source === "MANUEL") {
-    await db.groceryListItem.delete({ where: { id } });
+    await db.$transaction(async (tx) => {
+      await tx.groceryListItem.delete({ where: { id } });
+      await synchroniserCourses(tx, userId, [item.weekStart]);
+    });
     return NextResponse.json({ traitement: "supprimee" });
   }
   await db.groceryListItem.update({ where: { id }, data: { masquee: true } });
