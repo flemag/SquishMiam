@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fredoka } from "next/font/google";
 import { cookies } from "next/headers";
 import { themeDepuisValeur } from "@/lib/themes";
@@ -15,6 +15,18 @@ export const metadata: Metadata = {
   title: "Miamz — Ton compagnon repas",
   description:
     "Planifie tes repas, génère ta liste de courses et cuisine accompagné de Miamz. Bien manger, sans charge mentale.",
+  appleWebApp: {
+    capable: true,
+    title: "Miamz",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#4A6741",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
