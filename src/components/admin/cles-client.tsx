@@ -42,6 +42,8 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
   const [enCours, setEnCours] = useState(false);
   // Une seule révocation à la fois : la clé identifie la ligne en attente.
   const [revocation, setRevocation] = useState<string | null>(null);
+  // Erreur de révocation rattachée à sa ligne : visible là où l'on a cliqué.
+  const [erreurRevocation, setErreurRevocation] = useState<{ id: string; message: string } | null>(null);
 
   async function generer() {
     setEnCours(true);
@@ -68,16 +70,17 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
   async function revoquer(id: string) {
     if (revocation !== null) return;
     setRevocation(id);
+    setErreurRevocation(null);
     setMessage(null);
     try {
       const res = await fetch(`/api/admin/keys/${id}`, { method: "DELETE" });
       if (res.ok) {
         router.refresh();
       } else {
-        setMessage({ texte: await erreurDe(res, "Révocation impossible — réessaie."), erreur: true });
+        setErreurRevocation({ id, message: await erreurDe(res, "Révocation impossible — réessaie.") });
       }
     } catch {
-      setMessage({ texte: "Révocation impossible — réessaie.", erreur: true });
+      setErreurRevocation({ id, message: "Révocation impossible — réessaie." });
     } finally {
       setRevocation(null);
     }
@@ -170,6 +173,11 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
                         >
                           {revocation === k.id ? "Révocation…" : "Révoquer"}
                         </button>
+                      )}
+                      {erreurRevocation?.id === k.id && (
+                        <p role="status" aria-live="polite" className="mt-1 text-xs text-danger">
+                          {erreurRevocation.message}
+                        </p>
                       )}
                     </td>
                   </tr>
