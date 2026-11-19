@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     title: "Miamz",
     statusBarStyle: "default",
   },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
