@@ -1,0 +1,127 @@
+import type { RecetteExtraite } from "@/lib/import-recette";
+
+/**
+ * Nettoie le HTML brut pour n'en garder que le texte utile (titres, paragraphes, listes),
+ * et limite la taille pour être ultra-économique en tokens d'API.
+ */
+function epurerHtmlPourIa(html: string): string {
+  return html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, "")
+    .replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/gi, "")
+    .replace(/<header\b[^>]*>[\s\S]*?<\/header>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 5000); // 5000 caractères max ≈ 1200 tokens max
+}
+
+/**
+ * Tente d'extraire une recette structurée depuis le contenu d'une page
+ * en utilisant un modèle gratuit via l'API OpenRouter (Fallback Niveau 2).
+ */
+export async function extraireRecetteParIa(html: string): Promise<RecetteExtraite | null> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  const texteEpure = epurerHtmlPourIa(html);
+  if (texteEpure.length < 50) {
+    return null;
+  }
+
+  const systemPrompt = `Tu es un assistant culinaire expert. Ton rôle est d'extraire la recette de cuisine présente dans le texte fourni et de répondre EXCLUSIVEMENT avec un objet JSON valide (aucun markdown, aucun commentaire, uniquement le JSON brut).
+
+Format JSON attendu :
+{
+  "title": "Nom de la recette",
+  "servings": 4,
+  "minutes": 30,
+  "tags": ["tag1", "tag2"],
+  "ingredients": [
+    { "nom": "farine de blé", "quantite": 250, "unite": "g" },
+    { "nom": "oeufs", "quantite": 3, "unite": "pièce" }
+  ],
+  "steps": [
+    "Première étape",
+    "Deuxième étape"
+  ]
+}
+
+Règles :
+- "servings" doit être un entier entre 1 et 12 (défaut: 2).
+- "minutes" doit être un nombre entier représentant le temps total en minutes (optionnel).
+- "ingredients" : chaque élément DOIT avoir au moins "nom". "quantite" est un nombre positif si précisé. "unite" est une unité (g, kg, ml, cl, l, pièce, boîte, c. à soupe, c. à café...).
+- "steps" : liste ordonnée des étapes de préparation sous forme de chaînes de caractères.
+- Si le texte ne contient aucune recette culinaire, réponds uniquement avec : null`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://squishmiam.vercel.app",
+        "X-Title": "SquishMiam",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-exp:free",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Voici le contenu de la page web :\n\n${texteEpure}` },
+        ],
+        temperature: 0.1,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json().catch(() => null);
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content || typeof content !== "string") {
+      return null;
+    }
+
+    // Nettoyer les éventuels blocs ```json ... ```
+    const jsonPropre = content
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    if (jsonPropre === "null") {
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonPropre);
+    if (!parsed || typeof parsed !== "object" || !parsed.title || !Array.isArray(parsed.ingredients)) {
+      return null;
+    }
+
+    return {
+      title: String(parsed.title).trim(),
+      servings: typeof parsed.servings === "number" ? Math.min(12, Math.max(1, Math.round(parsed.servings))) : 2,
+      minutes: typeof parsed.minutes === "number" && parsed.minutes > 0 ? Math.round(parsed.minutes) : undefined,
+      tags: Array.isArray(parsed.tags) ? parsed.tags.map((t: unknown) => String(t).trim()).filter(Boolean) : [],
+      ingredients: (parsed.ingredients as Array<{ nom?: unknown; quantite?: unknown; unite?: unknown }>)
+        .filter((i) => i && typeof i.nom === "string" && i.nom.trim())
+        .map((i) => ({
+          nom: String(i.nom).trim(),
+          quantite: typeof i.quantite === "number" && i.quantite > 0 ? i.quantite : undefined,
+          unite: typeof i.unite === "string" && i.unite.trim() ? i.unite.trim() : undefined,
+        })),
+      steps: Array.isArray(parsed.steps) ? parsed.steps.map((s: unknown) => String(s).trim()).filter(Boolean) : [],
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
