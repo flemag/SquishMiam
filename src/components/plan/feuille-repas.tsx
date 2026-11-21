@@ -5,9 +5,17 @@ import { useRouter } from "next/navigation";
 import { useMiamz } from "@/components/miamz/fournisseur";
 import { filtrerRecettes, nomsIngredients } from "@/lib/recherche-recettes";
 import FeuilleModale from "@/components/ui/feuille-modale";
+import type { CategorieVue } from "@/lib/categories";
 
-export type RecetteChoix = { id: string; title: string; minutes: number | null; ingredients: unknown };
+export type RecetteChoix = { id: string; title: string; minutes: number | null; ingredients: unknown; categorieId: string | null };
 export type EntryVue = { id: string; date: string; slot: string; servings: number; recipeId: string; title: string };
+
+const DUREES: { label: string; valeur: number | null }[] = [
+  { label: "Toutes", valeur: null },
+  { label: "≤ 20 min", valeur: 20 },
+  { label: "≤ 30 min", valeur: 30 },
+  { label: "≤ 45 min", valeur: 45 },
+];
 
 const labelJour = (date: string) =>
   new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", timeZone: "UTC" }).format(new Date(date));
@@ -23,6 +31,7 @@ export default function FeuilleRepas({
   cible,
   entry,
   recipes,
+  categories,
   clesOccupees,
   dates,
   slots,
@@ -32,6 +41,7 @@ export default function FeuilleRepas({
   cible: { date: string; slot: string };
   entry: EntryVue | null;
   recipes: RecetteChoix[];
+  categories: CategorieVue[];
   clesOccupees: Set<string>;
   dates: string[];
   slots: string[];
@@ -41,6 +51,8 @@ export default function FeuilleRepas({
   const router = useRouter();
   const { emettre } = useMiamz();
   const [requete, setRequete] = useState(entry?.title ?? "");
+  const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
+  const [dureeMax, setDureeMax] = useState<number | null>(null);
   const [recetteChoisie, setRecetteChoisie] = useState(entry?.recipeId ?? recipes[0]?.id ?? "");
   const [servings, setServings] = useState(entry?.servings ?? 2);
   const [jour, setJour] = useState(cible.date);
@@ -55,8 +67,14 @@ export default function FeuilleRepas({
     ...r,
     tags: [] as string[],
     ingredientNoms: nomsIngredients(r.ingredients),
+    categorieId: r.categorieId,
   }));
-  const visibles = filtrerRecettes(recettesRecherchables, { requete, tags: [], dureeMax: null });
+  const visibles = filtrerRecettes(recettesRecherchables, {
+    requete,
+    tags: [],
+    dureeMax,
+    categorieId: categorieFiltre,
+  });
 
   function changeServings(v: number) {
     setServings(Math.min(12, Math.max(1, v)));
@@ -159,18 +177,92 @@ export default function FeuilleRepas({
       <p className="text-sm text-texte-doux">{edition ? "Modifier le repas" : "Nouveau repas"}</p>
       {erreur && <p className="mt-2 text-sm text-danger">{erreur}</p>}
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-col gap-3">
         <h3 className="text-sm font-semibold text-foreground">Recette</h3>
         <input
           value={requete}
           onChange={(e) => setRequete(e.target.value)}
           placeholder="Filtrer les recettes…"
           aria-label="Filtrer les recettes"
-          className="champ mt-2 w-full"
+          className="champ w-full"
         />
-        <div className="mt-2 flex flex-col gap-1">
+
+        {/* Rangée catégories */}
+        <div
+          role="group"
+          aria-label="Filtrer par catégorie"
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+        >
+          <button
+            type="button"
+            onClick={() => setCategorieFiltre(null)}
+            aria-pressed={categorieFiltre === null}
+            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
+              categorieFiltre === null
+                ? "bg-[#4A6741] text-white"
+                : "border border-bordure bg-white text-texte-doux"
+            }`}
+          >
+            Toutes
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setCategorieFiltre(c.id)}
+              aria-pressed={categorieFiltre === c.id}
+              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
+                categorieFiltre === c.id
+                  ? "bg-[#4A6741] text-white"
+                  : "border border-bordure bg-white text-texte-doux"
+              }`}
+            >
+              {c.nom}
+            </button>
+          ))}
+        </div>
+
+        {/* Rangée durées */}
+        <div
+          role="group"
+          aria-label="Filtrer par durée"
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+        >
+          {DUREES.map((d) => (
+            <button
+              key={d.label}
+              type="button"
+              onClick={() => setDureeMax(d.valeur)}
+              aria-pressed={dureeMax === d.valeur}
+              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
+                dureeMax === d.valeur
+                  ? "bg-[#4A6741] text-white"
+                  : "border border-bordure bg-white text-texte-doux"
+              }`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-texte-doux">{visibles.length} recette(s)</p>
+
+        <div className="flex flex-col gap-1">
           {visibles.length === 0 ? (
-            <p className="text-sm text-texte-doux">Aucune recette ne correspond.</p>
+            <div>
+              <p className="text-sm text-texte-doux">Aucune recette ne correspond.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setRequete("");
+                  setCategorieFiltre(null);
+                  setDureeMax(null);
+                }}
+                className="bouton-secondaire mt-2 min-h-11"
+              >
+                Réinitialiser les filtres
+              </button>
+            </div>
           ) : (
             visibles.map((r) => (
               <button

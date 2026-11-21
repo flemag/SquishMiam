@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import FeuilleRepas, { type RecetteChoix } from "./feuille-repas";
+import type { CategorieVue } from "@/lib/categories";
 
 export type EntryVue = {
   id: string;
@@ -24,12 +25,14 @@ export default function GrillePlan({
   slotLabels,
   entries,
   recipes,
+  categories,
 }: {
   dates: string[];
   slots: string[];
   slotLabels: Record<string, string>;
   entries: EntryVue[];
   recipes: RecetteChoix[];
+  categories: CategorieVue[];
 }) {
   const router = useRouter();
   const [glisse, setGlisse] = useState<string | null>(null);
@@ -145,6 +148,7 @@ export default function GrillePlan({
           cible={{ date: feuille.date, slot: feuille.slot }}
           entry={feuille.entry}
           recipes={recipes}
+          categories={categories}
           clesOccupees={clesOccupees}
           dates={dates}
           slots={slots}

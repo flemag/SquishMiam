@@ -22,16 +22,20 @@ export default async function PlanPage({
   const fin = new Date(debut);
   fin.setUTCDate(fin.getUTCDate() + 7);
 
-  const [entries, recipes] = await Promise.all([
+  const [entries, recipes, categoriesTriees] = await Promise.all([
     db.mealPlanEntry.findMany({
       where: { ownerId: userId, date: { gte: debut, lt: fin } },
       include: { recipe: { select: { id: true, title: true } } },
     }),
     db.recipe.findMany({
       where: { createdById: userId },
-      select: { id: true, title: true, minutes: true, ingredients: true },
+      select: { id: true, title: true, minutes: true, ingredients: true, categorieId: true },
       orderBy: { title: "asc" },
     }),
+    db.categorie.findMany({
+      where: { masquee: false },
+      select: { id: true, nom: true },
+    }).then((cats) => cats.sort((a, b) => a.nom.localeCompare(b.nom, "fr"))),
   ]);
 
   const prev = new Date(debut);
@@ -86,6 +90,7 @@ export default async function PlanPage({
             title: e.recipe.title,
           }))}
           recipes={recipes}
+          categories={categoriesTriees}
         />
       )}
     </main>
