@@ -77,7 +77,7 @@ export function parseLigneIngredient(texte: string): { nom: string; quantite?: n
   const match = propre.match(pattern);
 
   if (match) {
-    let qteStr = match[1].replace(",", ".");
+    const qteStr = match[1].replace(",", ".");
     let qte: number;
     if (qteStr.includes("/")) {
       const [num, den] = qteStr.split("/").map(Number);

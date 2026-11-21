@@ -34,6 +34,13 @@ export default function FormulaireRecette({ categories: categoriesInitiales }: {
   const [creationCat, setCreationCat] = useState(false);
   const [erreurCat, setErreurCat] = useState<string | null>(null);
 
+  // Importation par URL
+  const [voletImport, setVoletImport] = useState(false);
+  const [urlImport, setUrlImport] = useState("");
+  const [importEnCours, setImportEnCours] = useState(false);
+  const [erreurImport, setErreurImport] = useState<string | null>(null);
+  const [succesImport, setSuccesImport] = useState(false);
+
   function ligne(index: number, champ: Partial<LigneIngredient>) {
     setIngredients((lignes) => lignes.map((l, i) => (i === index ? { ...l, ...champ } : l)));
   }
@@ -65,6 +72,49 @@ export default function FormulaireRecette({ categories: categoriesInitiales }: {
       setErreurCat("Création impossible — réessaie.");
     } finally {
       setCreationCat(false);
+    }
+  }
+
+  async function importerUrl() {
+    const url = urlImport.trim();
+    if (!url) return;
+    setImportEnCours(true);
+    setErreurImport(null);
+    setSuccesImport(false);
+    try {
+      const res = await fetch("/api/recipes/import-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.recette) {
+        const r = data.recette;
+        if (r.title) setTitle(r.title);
+        if (typeof r.servings === "number") setServings(r.servings);
+        if (r.minutes) setMinutes(String(r.minutes));
+        if (Array.isArray(r.tags) && r.tags.length > 0) setTags(r.tags.join(", "));
+        if (Array.isArray(r.ingredients) && r.ingredients.length > 0) {
+          setIngredients(
+            r.ingredients.map((ing: { nom: string; quantite?: number; unite?: string }) => ({
+              nom: ing.nom,
+              quantite: ing.quantite !== undefined ? String(ing.quantite) : "",
+              unite: ing.unite && UNITES.includes(ing.unite) ? ing.unite : "g",
+            }))
+          );
+        }
+        if (Array.isArray(r.steps) && r.steps.length > 0) {
+          setSteps(r.steps.join("\n"));
+        }
+        setSuccesImport(true);
+        setUrlImport("");
+      } else {
+        setErreurImport(data.error ?? "Impossible d'importer cette recette.");
+      }
+    } catch {
+      setErreurImport("Erreur réseau lors de l'import.");
+    } finally {
+      setImportEnCours(false);
     }
   }
 
@@ -111,6 +161,60 @@ export default function FormulaireRecette({ categories: categoriesInitiales }: {
   return (
     <main className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-2xl font-semibold text-miamz-vert">Nouvelle recette</h1>
+
+      {/* Volet Importation par URL */}
+      <div className="carte mb-6 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔗</span>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Importer depuis le web</h2>
+              <p className="text-xs text-texte-doux">Marmiton, 750g, CuisineAZ, blogs de cuisine...</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setVoletImport(!voletImport);
+              setErreurImport(null);
+              setSuccesImport(false);
+            }}
+            className="bouton-secondaire min-h-9 px-3 text-xs"
+          >
+            {voletImport ? "Fermer" : "Coller un lien"}
+          </button>
+        </div>
+
+        {voletImport && (
+          <div className="mt-3 flex flex-col gap-2 border-t border-bordure pt-3">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                type="url"
+                value={urlImport}
+                onChange={(e) => setUrlImport(e.target.value)}
+                placeholder="https://www.marmiton.org/recettes/..."
+                aria-label="URL de la recette à importer"
+                className="champ min-w-0 flex-1"
+                disabled={importEnCours}
+              />
+              <button
+                type="button"
+                onClick={importerUrl}
+                disabled={!urlImport.trim() || importEnCours}
+                className="bouton min-h-11 px-5 sm:min-h-9"
+              >
+                {importEnCours ? "Analyse…" : "Importer"}
+              </button>
+            </div>
+            {erreurImport && <p className="text-xs text-danger">{erreurImport}</p>}
+            {succesImport && (
+              <p className="text-xs font-medium text-[#4A6741]">
+                ✓ Recette importée avec succès ! Tu peux l&apos;ajuster ci-dessous avant d&apos;enregistrer.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="carte flex flex-col gap-5 p-6">
         <label className="flex flex-col gap-1 text-sm text-texte-doux">
