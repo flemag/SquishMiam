@@ -24,6 +24,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const parsed = recipeInput.partial().safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Recette invalide" }, { status: 400 });
 
+  if (parsed.data.categorieId !== undefined) {
+    const catOk = await db.categorie.findFirst({ where: { id: parsed.data.categorieId, masquee: false }, select: { id: true } });
+    if (!catOk) return NextResponse.json({ error: "Catégorie inconnue" }, { status: 400 });
+  }
+
   // Seuls ingrédients et portions influencent la liste de courses.
   const toucheListe = parsed.data.ingredients !== undefined || parsed.data.servings !== undefined;
 

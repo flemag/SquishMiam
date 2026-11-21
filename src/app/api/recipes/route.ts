@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { CATEGORIE_AUTRE } from "@/lib/categories";
 import { db } from "@/lib/db";
 import { recipeInput } from "@/lib/recipes-schema";
 import { NextResponse } from "next/server";
@@ -26,8 +27,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Recette invalide" }, { status: 400 });
   }
 
+  const categorieId = parsed.data.categorieId ?? CATEGORIE_AUTRE;
+  const catOk = await db.categorie.findFirst({ where: { id: categorieId, masquee: false }, select: { id: true } });
+  if (!catOk) return NextResponse.json({ error: "Catégorie inconnue" }, { status: 400 });
+
   const recipe = await db.recipe.create({
-    data: { ...parsed.data, createdById: userId },
+    data: { ...parsed.data, categorieId, createdById: userId },
   });
   return NextResponse.json({ recipe }, { status: 201 });
 }

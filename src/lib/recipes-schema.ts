@@ -11,6 +11,7 @@ export const recipeInput = z.object({
   servings: z.number().int().min(1).max(12),
   minutes: z.number().int().positive().optional(),
   tags: z.array(z.string().trim()).default([]),
+  categorieId: z.string().trim().min(1).optional(),
   ingredients: z.array(ingredientInput).min(1),
   steps: z.array(z.string().trim()).default([]),
 });
