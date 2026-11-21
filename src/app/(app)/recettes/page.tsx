@@ -9,10 +9,18 @@ export default async function RecettesPage() {
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) redirect("/connexion");
 
-  const recipes = await db.recipe.findMany({
-    where: { createdById: userId },
-    orderBy: { createdAt: "desc" },
-  });
+  const [recipes, categories] = await Promise.all([
+    db.recipe.findMany({
+      where: { createdById: userId },
+      include: { categorie: { select: { nom: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.categorie.findMany({
+      where: { masquee: false },
+      select: { id: true, nom: true },
+    }),
+  ]);
+  categories.sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
 
   return (
     <main>
@@ -34,6 +42,7 @@ export default async function RecettesPage() {
         </div>
       ) : (
         <RecettesClient
+          categories={categories}
           recettes={recipes.map((r) => ({
             id: r.id,
             title: r.title,
@@ -42,6 +51,8 @@ export default async function RecettesPage() {
             tags: r.tags,
             ingredients: r.ingredients,
             steps: r.steps,
+            categorieId: r.categorieId,
+            categorieNom: r.categorie?.nom ?? null,
           }))}
         />
       )}

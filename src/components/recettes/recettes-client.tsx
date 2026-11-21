@@ -8,6 +8,7 @@ import {
   type RecetteRecherchable,
   type Tri,
 } from "@/lib/recherche-recettes";
+import type { CategorieVue } from "@/lib/categories";
 import RecetteCard from "./recette-card";
 import FeuilleRecette, { type RecetteFiche } from "./feuille-recette";
 
@@ -26,8 +27,15 @@ const DUREES: { label: string; valeur: number | null }[] = [
  * filtres tags cumulables + durée, tri, et fiche en bottom sheet. La logique
  * vit dans l'utilitaire pur recherche-recettes (testé).
  */
-export default function RecettesClient({ recettes }: { recettes: RecetteVue[] }) {
+export default function RecettesClient({
+  recettes,
+  categories,
+}: {
+  recettes: RecetteVue[];
+  categories: CategorieVue[];
+}) {
   const [requete, setRequete] = useState("");
+  const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
   const [tagsChoisis, setTagsChoisis] = useState<string[]>([]);
   const [dureeMax, setDureeMax] = useState<number | null>(null);
   const [tri, setTri] = useState<Tri>("recent");
@@ -40,7 +48,12 @@ export default function RecettesClient({ recettes }: { recettes: RecetteVue[] })
     ingredientNoms: nomsIngredients(r.ingredients),
   }));
   const visibles = trierRecettes(
-    filtrerRecettes(recettesRecherchables, { requete, tags: tagsChoisis, dureeMax }),
+    filtrerRecettes(recettesRecherchables, {
+      requete,
+      tags: tagsChoisis,
+      dureeMax,
+      categorieId: categorieFiltre,
+    }),
     tri
   );
 
@@ -52,6 +65,7 @@ export default function RecettesClient({ recettes }: { recettes: RecetteVue[] })
 
   function reinitialiser() {
     setRequete("");
+    setCategorieFiltre(null);
     setTagsChoisis([]);
     setDureeMax(null);
     setTri("recent");
@@ -68,6 +82,41 @@ export default function RecettesClient({ recettes }: { recettes: RecetteVue[] })
           aria-label="Rechercher un titre ou un ingrédient"
           className="champ w-full rounded-full"
         />
+      </div>
+
+      {/* Rangée catégories */}
+      <div
+        role="group"
+        aria-label="Filtrer par catégorie"
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+      >
+        <button
+          type="button"
+          onClick={() => setCategorieFiltre(null)}
+          aria-pressed={categorieFiltre === null}
+          className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
+            categorieFiltre === null
+              ? "bg-[#4A6741] text-white"
+              : "border border-bordure bg-white text-texte-doux"
+          }`}
+        >
+          Toutes
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setCategorieFiltre(c.id)}
+            aria-pressed={categorieFiltre === c.id}
+            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
+              categorieFiltre === c.id
+                ? "bg-[#4A6741] text-white"
+                : "border border-bordure bg-white text-texte-doux"
+            }`}
+          >
+            {c.nom}
+          </button>
+        ))}
       </div>
 
       {tagsTous.length > 0 && (

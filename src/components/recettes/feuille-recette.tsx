@@ -12,6 +12,8 @@ export type RecetteFiche = {
   tags: string[];
   ingredients: unknown;
   steps: unknown;
+  categorieId: string | null;
+  categorieNom: string | null;
 };
 
 /** Nom + « — quantite unite » si présents ; tolérant (Json Prisma). */

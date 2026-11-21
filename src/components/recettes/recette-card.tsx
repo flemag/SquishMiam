@@ -4,6 +4,7 @@ type RecetteCarte = {
   servings: number;
   minutes: number | null;
   tags: string[];
+  categorieNom?: string | null;
 };
 
 /**
@@ -17,6 +18,7 @@ export default function RecetteCard({ recette, onOuvrir }: { recette: RecetteCar
       <p className="mt-1 text-sm text-texte-doux">
         {recette.servings} portion{recette.servings > 1 ? "s" : ""}
         {recette.minutes ? ` · ${recette.minutes} min` : ""}
+        {recette.categorieNom ? ` · ${recette.categorieNom}` : ""}
       </p>
       {recette.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
