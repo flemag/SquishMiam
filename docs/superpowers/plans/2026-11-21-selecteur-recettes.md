@@ -41,7 +41,7 @@
 - Consumes: rien.
 - Produces (Tasks 2–7) : table `Categorie { id, nom, cle, masquee, createdAt }` peuplée avec 9 lignes aux ids stables `cat-pates`, `cat-vege`, `cat-viande`, `cat-poisson`, `cat-soupe`, `cat-salade`, `cat-oeufs`, `cat-dessert`, `cat-autre` ; colonne `Recipe.categorieId String?` avec backfill à `cat-autre`.
 
-- [ ] **Step 1: Ajouter les modèles au schéma**
+- [x] **Step 1: Ajouter les modèles au schéma**
 
 Dans `prisma/schema.prisma`, ajouter dans `model Recipe` (après `createdBy`) :
 
@@ -65,12 +65,12 @@ model Categorie {
 }
 ```
 
-- [ ] **Step 2: Générer la migration sans l'appliquer**
+- [x] **Step 2: Générer la migration sans l'appliquer**
 
 Run: `npx prisma migrate dev --create-only --name add_categories`
 Expected: dossier `prisma/migrations/<timestamp>_add_categories/` créé ; « Your migration is now created ». Ne pas répondre à un éventuel prompt de reset — il ne doit pas y en avoir.
 
-- [ ] **Step 3: Compléter la migration avec le seed et le backfill**
+- [x] **Step 3: Compléter la migration avec le seed et le backfill**
 
 À la fin du `migration.sql` généré, ajouter exactement :
 
@@ -92,12 +92,12 @@ ON CONFLICT ("id") DO NOTHING;
 UPDATE "Recipe" SET "categorieId" = 'cat-autre' WHERE "categorieId" IS NULL;
 ```
 
-- [ ] **Step 4: Appliquer la migration**
+- [x] **Step 4: Appliquer la migration**
 
 Run: `npx prisma migrate dev`
 Expected: migration appliquée, « Your database is now in sync », client Prisma régénéré.
 
-- [ ] **Step 5: Vérifier le schéma et les données**
+- [x] **Step 5: Vérifier le schéma et les données**
 
 Run: `npx prisma validate` → « The schema is valid ».
 
@@ -109,7 +109,7 @@ node --input-type=module -e 'import {PrismaClient} from "@prisma/client"; const 
 
 Expected: 9 lignes `cat-…=Nom`, toutes les 9 clés présentes, puis `sans categorie: 0`.
 
-- [ ] **Step 6: Gate et commit**
+- [x] **Step 6: Gate et commit**
 
 Run: `npm test` → 70/70 verts (aucun test modifié).
 Run: `npm run build` → vert.
@@ -136,7 +136,7 @@ Run: `npm run build` → vert.
   export function normaliserCategorie(nom: string): string; // minuscules, sans accents, œ/æ dépliés, trim, espaces internes compactés
   ```
 
-- [ ] **Step 1: Écrire le test qui échoue**
+- [x] **Step 1: Écrire le test qui échoue**
 
 `tests/categories.test.ts` :
 
@@ -163,21 +163,21 @@ describe("normaliserCategorie", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `npx vitest run tests/categories.test.ts`
 Expected: FAIL — module `@/lib/categories` introuvable.
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 `src/lib/categories.ts` : `normaliserCategorie` = `normaliser(nom)` puis `trim()` puis remplacement de `/\s+/g` par un espace. Exporter les trois symboles de l'interface.
 
-- [ ] **Step 4: Vérifier le passage**
+- [x] **Step 4: Vérifier le passage**
 
 Run: `npx vitest run tests/categories.test.ts`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Gate et commit**
+- [x] **Step 5: Gate et commit**
 
 Run: `npm test` puis `npm run build` → verts.
 
@@ -209,7 +209,7 @@ Run: `npm test` puis `npm run build` → verts.
   ```
   `categorieId` absent ou `null` = toutes les catégories ; sinon égalité stricte.
 
-- [ ] **Step 1: Écrire les tests qui échouent**
+- [x] **Step 1: Écrire les tests qui échouent**
 
 Dans `tests/recherche-recettes.test.ts`, ajouter `categorieId` aux fixtures : `a` → `"cat-salade"`, `b` → `"cat-viande"`, `c` → `null`. Puis un bloc :
 
@@ -228,21 +228,21 @@ it("une recette sans catégorie n'apparaît pas sous une catégorie", () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec**
+- [x] **Step 2: Vérifier l'échec**
 
 Run: `npx vitest run tests/recherche-recettes.test.ts`
 Expected: FAIL — les cas catégorie renvoient toutes les recettes (ou erreur de type).
 
-- [ ] **Step 3: Implémenter**
+- [x] **Step 3: Implémenter**
 
 Ajouter `categorieId?: string | null` aux deux types. Dans `filtrerRecettes`, après le filtre durée : si `filtres.categorieId != null` et `r.categorieId !== filtres.categorieId`, renvoyer `false`.
 
-- [ ] **Step 4: Vérifier le passage**
+- [x] **Step 4: Vérifier le passage**
 
 Run: `npx vitest run tests/recherche-recettes.test.ts`
 Expected: PASS (tous les cas existants + 3 nouveaux).
 
-- [ ] **Step 5: Gate et commit**
+- [x] **Step 5: Gate et commit**
 
 Run: `npm test` (77 verts) puis `npm run build` → verts.
 
@@ -269,7 +269,7 @@ Run: `npm test` (77 verts) puis `npm run build` → verts.
   - `POST /api/recipes` : absent → `cat-autre` ; inconnu ou masqué → `400 { error: "Catégorie inconnue" }`.
   - `PATCH /api/recipes/[id]` : même validation quand `categorieId` est fourni ; aucune resynchronisation de courses (règle existante : ingrédients/portions seulement).
 
-- [ ] **Step 1: Ajouter `categorieId` au schéma zod**
+- [x] **Step 1: Ajouter `categorieId` au schéma zod**
 
 Dans `recipeInput`, après `tags` :
 
@@ -277,24 +277,24 @@ Dans `recipeInput`, après `tags` :
 categorieId: z.string().trim().min(1).optional(),
 ```
 
-- [ ] **Step 2: Créer la route des catégories**
+- [x] **Step 2: Créer la route des catégories**
 
 `src/app/api/categories/route.ts` : même motif d'auth que les routes existantes (`auth()` puis `(session?.user as { id?: string })?.id`, `401 { error: "Non authentifié" }`). Lire `body.nom` en tolérant un corps invalide, `trim()`, refuser vide ou > 40 caractères. Calculer `cle = normaliserCategorie(nom)` ; refuser si `cle` vide. `findUnique({ where: { cle } })` → si trouvée, répondre `200 { categorie }`. Sinon `create({ data: { nom, cle } })` → `201 { categorie }`. En cas d'échec de `create` (course P2002), relire par `cle` : si trouvée `200`, sinon `500 { error: "Création impossible" }`.
 
-- [ ] **Step 3: Valider la catégorie à la création d'une recette**
+- [x] **Step 3: Valider la catégorie à la création d'une recette**
 
 Dans `POST /api/recipes`, après `parsed` : `const categorieId = parsed.data.categorieId ?? CATEGORIE_AUTRE;` puis `findFirst({ where: { id: categorieId, masquee: false }, select: { id: true } })`. Si absent → `400 { error: "Catégorie inconnue" }`. Puis créer avec `{ ...parsed.data, categorieId, createdById: userId }`.
 
-- [ ] **Step 4: Valider la catégorie au PATCH d'une recette**
+- [x] **Step 4: Valider la catégorie au PATCH d'une recette**
 
 Dans `PATCH /api/recipes/[id]`, après `parsed` : si `parsed.data.categorieId !== undefined`, vérifier `findFirst({ where: { id: parsed.data.categorieId, masquee: false } })` → sinon `400 { error: "Catégorie inconnue" }`. Ne rien changer d'autre (ni transaction, ni `toucheListe`).
 
-- [ ] **Step 5: Vérifier**
+- [x] **Step 5: Vérifier**
 
 Run: `npm run build` → vert (type-check des routes).
 Contrôle manuel après déploiement : depuis le formulaire, créer « Tajines » deux fois → une seule ligne en base, la deuxième requête répond `200`.
 
-- [ ] **Step 6: Gate et commit**
+- [x] **Step 6: Gate et commit**
 
 Run: `npm test` puis `npm run build` → verts.
 
@@ -315,11 +315,11 @@ Run: `npm test` puis `npm run build` → verts.
 - Consumes: `CategorieVue`, `CATEGORIE_AUTRE` (Task 2) ; `POST /api/categories` (Task 4) ; `POST /api/recipes` avec `categorieId` (Task 4).
 - Produces: `export default function FormulaireRecette({ categories }: { categories: CategorieVue[] })`.
 
-- [ ] **Step 1: Transformer la page en composant serveur**
+- [x] **Step 1: Transformer la page en composant serveur**
 
 `src/app/(app)/recettes/nouvelle/page.tsx` : retirer `"use client"`, charger la session (redirection `/connexion` si absente), lire `db.categorie.findMany({ where: { masquee: false }, select: { id: true, nom: true } })`, trier avec `nom.localeCompare(nom, "fr")`, rendre `<FormulaireRecette categories={categories} />`. Déplacer tout le contenu actuel de la page dans `src/components/recettes/formulaire-recette.tsx` (avec `"use client"`, mêmes états et mêmes libellés).
 
-- [ ] **Step 2: Ajouter le champ catégorie**
+- [x] **Step 2: Ajouter le champ catégorie**
 
 Dans le formulaire, après « Tags » :
 
@@ -329,16 +329,16 @@ Dans le formulaire, après « Tags » :
 - quand la valeur choisie est `"__nouvelle"` : afficher un champ « Nom de la catégorie » (`className="champ min-w-0 flex-1"`) et deux boutons `min-h-11` : « Créer » (désactivé si nom blanc ou création en cours, libellé « Création… ») et « Annuler » (revient à la catégorie précédente, mémorisée dans un état) ;
 - « Créer » : `POST /api/categories` avec `{ nom }` ; succès → insérer la catégorie dans l'état local (tri `localeCompare("fr")`), la sélectionner, fermer le champ, vider la saisie ; échec → message français (`data.error` sinon « Création impossible — réessaie. »).
 
-- [ ] **Step 3: Envoyer la catégorie**
+- [x] **Step 3: Envoyer la catégorie**
 
 Dans `enregistrer`, ajouter `categorieId` au corps JSON quand la valeur n'est pas `"__nouvelle"`. Le bouton « Enregistrer la recette » est désactivé aussi tant que `categorieId === "__nouvelle"` (libellé inchangé).
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `npm run build` → vert.
 Contrôle manuel (après déploiement) : créer « Tajines », enregistrer une recette dessus, puis rouvrir le formulaire → « Tajines » présent dans la liste.
 
-- [ ] **Step 5: Gate et commit**
+- [x] **Step 5: Gate et commit**
 
 Run: `npm test` puis `npm run build` → verts.
 
@@ -360,11 +360,11 @@ Run: `npm test` puis `npm run build` → verts.
 - Consumes: `filtrerRecettes` avec `categorieId` (Task 3) ; `CategorieVue` (Task 2) ; `Recipe.categorieId` (Task 1).
 - Produces: `RecetteChoix` gagne `categorieId: string | null` ; `GrillePlan` et `FeuilleRepas` reçoivent `categories: CategorieVue[]`.
 
-- [ ] **Step 1: Charger et passer les catégories**
+- [x] **Step 1: Charger et passer les catégories**
 
 `plan/page.tsx` : ajouter à la `Promise.all` une lecture `db.categorie.findMany({ where: { masquee: false }, select: { id: true, nom: true } })`, triée en français ; ajouter `categorieId: true` au `select` des recettes ; passer `categories={categoriesTriees}` à `GrillePlan`. `GrillePlan` : nouveau prop typé `categories: CategorieVue[]`, transmis à `FeuilleRepas`. `RecetteChoix` : ajouter `categorieId: string | null`.
 
-- [ ] **Step 2: Ajouter les deux rangées de filtres**
+- [x] **Step 2: Ajouter les deux rangées de filtres**
 
 Dans `FeuilleRepas`, sous le champ de recherche :
 
@@ -374,16 +374,16 @@ Dans `FeuilleRepas`, sous le champ de recherche :
 - rangée durées : même style, `aria-label="Filtrer par durée"`, options « Toutes » (`null`), « ≤ 20 min » (20), « ≤ 30 min » (30), « ≤ 45 min » (45) ;
 - compteur au-dessus de la liste : `{visibles.length} recette(s)`.
 
-- [ ] **Step 3: Sortie de secours**
+- [x] **Step 3: Sortie de secours**
 
 Si `visibles.length === 0` : afficher « Aucune recette ne correspond. » puis un bouton « Réinitialiser les filtres » (`className="bouton-secondaire mt-2 min-h-11"`) qui remet `requete`, `categorieFiltre` et `dureeMax` à leurs valeurs par défaut. La sélection courante (`recetteChoisie`) et les flux ajout/modification/suppression restent inchangés.
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `npm run build` → vert.
 Contrôle manuel (après déploiement, 360 px) : `/plan` → ouvrir une case vide → taper « Poisson » → seules les recettes de poisson ; changer la durée → filtres combinés ; vider la recherche + forcer 0 résultat → le bouton réinitialise la liste ; aucun débordement de page, chips défilantes.
 
-- [ ] **Step 5: Gate et commit**
+- [x] **Step 5: Gate et commit**
 
 Run: `npm test` puis `npm run build` → verts.
 
@@ -406,24 +406,24 @@ Run: `npm test` puis `npm run build` → verts.
 - Consumes: `filtrerRecettes` avec `categorieId` (Task 3), `CategorieVue` (Task 2), relation `Recipe.categorie` (Task 1).
 - Produces: `RecetteVue`/`RecetteFiche` gagnent `categorieId: string | null` et `categorieNom: string | null` ; `RecettesClient` reçoit `categories: CategorieVue[]`.
 
-- [ ] **Step 1: Charger les catégories et les noms**
+- [x] **Step 1: Charger les catégories et les noms**
 
 `recettes/page.tsx` : lire recettes (`include: { categorie: { select: { nom: true } } }`) et catégories visibles en parallèle, trier les catégories en français, mapper chaque recette avec `categorieId: r.categorieId` et `categorieNom: r.categorie?.nom ?? null`. Passer `categories` à `RecettesClient`.
 
-- [ ] **Step 2: Ajouter la rangée de chips**
+- [x] **Step 2: Ajouter la rangée de chips**
 
 `recettes-client.tsx` : état `categorieFiltre: string | null` ; rangée « Toutes » + catégories avec les mêmes classes/aria que la feuille de repas (`aria-label="Filtrer par catégorie"`, `min-h-11`), placée au-dessus des tags ; ajouter `categorieId: categorieFiltre` à l'appel `filtrerRecettes` ; `reinitialiser` remet aussi `categorieFiltre` à `null`.
 
-- [ ] **Step 3: Afficher la catégorie sur les cartes**
+- [x] **Step 3: Afficher la catégorie sur les cartes**
 
 `RecetteFiche` et `RecetteVue` gagnent les deux champs. `RecetteCard` : ajouter `categorieNom?: string | null` à son type et, dans la ligne méta, suffixer ` · {categorieNom}` quand il existe (après les minutes). Passer `categorieNom={r.categorieNom}` depuis `RecettesClient`.
 
-- [ ] **Step 4: Vérifier**
+- [x] **Step 4: Vérifier**
 
 Run: `npm run build` → vert.
 Contrôle manuel : `/recettes` → chip « Poisson » → seules les recettes de poisson ; tag + catégorie + durée se combinent ; « Réinitialiser les filtres » efface catégorie, tags, durée, texte et tri ; une carte affiche « 2 portions · 30 min · Poisson ».
 
-- [ ] **Step 5: Gate et commit**
+- [x] **Step 5: Gate et commit**
 
 Run: `npm test` puis `npm run build` → verts.
 
@@ -438,22 +438,22 @@ Run: `npm test` puis `npm run build` → verts.
 
 **Files:** aucun (gate uniquement)
 
-- [ ] **Step 1: Suite complète**
+- [x] **Step 1: Suite complète**
 
 Run: `npm test`
 Expected: tous les fichiers verts, nombre de tests ≥ 77 (70 + 4 catégories + 3 filtre).
 
-- [ ] **Step 2: Build de production**
+- [x] **Step 2: Build de production**
 
 Run: `npm run build` (timeout ≥ 600000 ms)
 Expected: vert, routes `/api/categories` et pages `/plan`, `/recettes`, `/recettes/nouvelle` compilées.
 
-- [ ] **Step 3: Vérifier l'absence de régression de forme**
+- [x] **Step 3: Vérifier l'absence de régression de forme**
 
 Run: `"C:\Program Files\Git\cmd\git.exe" diff --stat 14e4408..HEAD`
 Expected: uniquement les fichiers des Tasks 1–7 + la migration ; aucune dépendance ajoutée dans `package.json`.
 
-- [ ] **Step 4: Pousser**
+- [x] **Step 4: Pousser**
 
 Run: `"C:\Program Files\Git\cmd\git.exe" push origin main`
 Expected: Vercel redéploie. Vérifier ensuite sur téléphone les cinq critères de réussite de la spec :
