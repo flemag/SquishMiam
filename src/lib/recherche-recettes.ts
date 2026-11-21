@@ -10,6 +10,7 @@ export type RecetteRecherchable = {
   minutes: number | null;
   tags: string[];
   ingredientNoms: string[];
+  categorieId?: string | null; // optionnel : les appels existants restent valides
 };
 
 export type Tri = "recent" | "alpha" | "duree";
@@ -45,12 +46,13 @@ export function correspondRecette(recette: { title: string; ingredientNoms: stri
 
 export function filtrerRecettes<T extends RecetteRecherchable>(
   recettes: T[],
-  filtres: { requete: string; tags: string[]; dureeMax: number | null }
+  filtres: { requete: string; tags: string[]; dureeMax: number | null; categorieId?: string | null }
 ): T[] {
   return recettes.filter((r) => {
     if (!correspondRecette(r, filtres.requete)) return false;
     if (!filtres.tags.every((t) => r.tags.includes(t))) return false;
     if (filtres.dureeMax !== null && (r.minutes === null || r.minutes > filtres.dureeMax)) return false;
+    if (filtres.categorieId != null && r.categorieId !== filtres.categorieId) return false;
     return true;
   });
 }

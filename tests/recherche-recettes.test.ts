@@ -40,9 +40,9 @@ describe("correspondRecette", () => {
 });
 
 const base = { id: "x", tags: [] as string[] };
-const a = { ...base, id: "a", title: "Salade", minutes: 20, ingredientNoms: ["riz", "thon"], tags: ["végé", "rapide"] };
-const b = { ...base, id: "b", title: "Bœuf bourguignon", minutes: 45, ingredientNoms: ["bœuf", "carotte"], tags: ["végé"] };
-const c = { ...base, id: "c", title: "Mystère", minutes: null, ingredientNoms: [], tags: [] };
+const a = { ...base, id: "a", title: "Salade", minutes: 20, ingredientNoms: ["riz", "thon"], tags: ["végé", "rapide"], categorieId: "cat-salade" };
+const b = { ...base, id: "b", title: "Bœuf bourguignon", minutes: 45, ingredientNoms: ["bœuf", "carotte"], tags: ["végé"], categorieId: "cat-viande" };
+const c = { ...base, id: "c", title: "Mystère", minutes: null, ingredientNoms: [], tags: [], categorieId: null };
 
 describe("filtrerRecettes", () => {
   it("filtre par durée : minutes null dans Toutes, hors ≤N", () => {
@@ -54,6 +54,18 @@ describe("filtrerRecettes", () => {
   });
   it("combine requête, durée et tags", () => {
     expect(filtrerRecettes([a, b, c], { requete: "boeuf", tags: [], dureeMax: null }).map((r) => r.id)).toEqual(["b"]);
+  });
+  it("filtre par catégorie (égalité stricte) et null = toutes", () => {
+    expect(filtrerRecettes([a, b, c], { requete: "", tags: [], dureeMax: null, categorieId: "cat-salade" }).map((r) => r.id)).toEqual(["a"]);
+    expect(filtrerRecettes([a, b, c], { requete: "", tags: [], dureeMax: null, categorieId: null }).map((r) => r.id)).toEqual(["a", "b", "c"]);
+  });
+  it("combine catégorie, durée et texte en ET", () => {
+    expect(filtrerRecettes([a, b, c], { requete: "salade", tags: [], dureeMax: 20, categorieId: "cat-salade" }).map((r) => r.id)).toEqual(["a"]);
+    expect(filtrerRecettes([a, b, c], { requete: "salade", tags: [], dureeMax: 10, categorieId: "cat-salade" })).toEqual([]);
+    expect(filtrerRecettes([a, b, c], { requete: "boeuf", tags: [], dureeMax: null, categorieId: "cat-salade" })).toEqual([]);
+  });
+  it("une recette sans catégorie n'apparaît pas sous une catégorie", () => {
+    expect(filtrerRecettes([c], { requete: "", tags: [], dureeMax: null, categorieId: "cat-salade" })).toEqual([]);
   });
 });
 
