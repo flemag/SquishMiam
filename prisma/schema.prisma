@@ -57,8 +57,21 @@ model Recipe {
   steps       String[]
   createdById String
   createdBy   User            @relation(fields: [createdById], references: [id])
+  categorieId String?
+  categorie   Categorie?      @relation(fields: [categorieId], references: [id], onDelete: SetNull)
   entries     MealPlanEntry[]
   createdAt   DateTime        @default(now())
+
+  @@index([categorieId])
+}
+
+model Categorie {
+  id        String   @id @default(cuid())
+  nom       String
+  cle       String   @unique
+  masquee   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  recettes  Recipe[]
 }
 
 model MealPlanEntry {
