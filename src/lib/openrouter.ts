@@ -1,6 +1,74 @@
 import type { RecetteExtraite } from "@/lib/import-recette";
 
 /**
+ * Modèles gratuits actifs sur OpenRouter (vérifiés le 2026-11-22). Les
+ * identifiants `:free` disparaissent ou saturent régulièrement : on les essaie
+ * dans l'ordre et on renvoie `null` si aucun ne répond utilisablement.
+ */
+export const MODELES_GRATUITS = [
+  "particle-ai/particle-1:free",
+  "baidu/ernie-5.5-flash-preview:free",
+];
+
+/**
+ * Demande une réponse texte à OpenRouter en essayant les modèles gratuits dans
+ * l'ordre, sous un délai global. Renvoie `null` sans clé, quota épuisé,
+ * réponse vide ou délai dépassé : l'appelant décide du repli.
+ */
+export async function demanderReponseIa(
+  messages: { role: string; content: string }[],
+  {
+    maxTokens = 700,
+    temperature = 0.7,
+    timeoutMs = 8000,
+  }: { maxTokens?: number; temperature?: number; timeoutMs?: number } = {}
+): Promise<string | null> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    for (const modele of MODELES_GRATUITS) {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://squishmiam.vercel.app",
+          "X-Title": "SquishMiam",
+        },
+        body: JSON.stringify({
+          model: modele,
+          messages,
+          temperature,
+          max_tokens: maxTokens,
+          response_format: { type: "json_object" },
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) continue;
+
+      const data = await res.json().catch(() => null);
+      const content = data?.choices?.[0]?.message?.content;
+      if (typeof content === "string" && content.trim()) {
+        return content;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * Nettoie le HTML brut pour n'en garder que le texte utile (titres, paragraphes, listes),
  * et limite la taille pour être ultra-économique en tokens d'API.
  */
@@ -22,11 +90,6 @@ function epurerHtmlPourIa(html: string): string {
  * en utilisant un modèle gratuit via l'API OpenRouter (Fallback Niveau 2).
  */
 export async function extraireRecetteParIa(html: string): Promise<RecetteExtraite | null> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
-
   const texteEpure = epurerHtmlPourIa(html);
   if (texteEpure.length < 50) {
     return null;
@@ -57,40 +120,19 @@ Règles :
 - "steps" : liste ordonnée des étapes de préparation sous forme de chaînes de caractères.
 - Si le texte ne contient aucune recette culinaire, réponds uniquement avec : null`;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const content = await demanderReponseIa(
+    [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Voici le contenu de la page web :\n\n${texteEpure}` },
+    ],
+    { maxTokens: 1200, temperature: 0.1, timeoutMs: 9000 }
+  );
+
+  if (!content) {
+    return null;
+  }
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://squishmiam.vercel.app",
-        "X-Title": "SquishMiam",
-      },
-      body: JSON.stringify({
-        model: "google/gemma-4-31b-it:free",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Voici le contenu de la page web :\n\n${texteEpure}` },
-        ],
-        temperature: 0.1,
-        response_format: { type: "json_object" },
-      }),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      return null;
-    }
-
-    const data = await res.json().catch(() => null);
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content || typeof content !== "string") {
-      return null;
-    }
-
     // Nettoyer les éventuels blocs ```json ... ```
     const jsonPropre = content
       .replace(/^```(?:json)?\s*/i, "")
@@ -122,7 +164,5 @@ Règles :
     };
   } catch {
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 }

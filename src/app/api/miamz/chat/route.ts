@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDateIso, weekStart } from "@/lib/plan";
+import { HUMEURS } from "@/lib/humeurs";
 import {
   formaterContexteCuisine,
   parserReponseMiamz,
   reponseCharmeLocal,
   type ContexteCuisine,
 } from "@/lib/chat-miamz";
+import { demanderReponseIa } from "@/lib/openrouter";
 
-// Modèle gratuit actif sur OpenRouter (vérifié le 2026-11-22). Les anciens
-// identifiants `:free` disparaissent régulièrement : le repli local couvre
-// l'indisponibilité, mais garder cet identifiant à jour évite de perdre l'IA.
-const MODELE = "google/gemma-4-31b-it:free";
+// Délai global laissé à l'IA avant le repli local « Charme local ».
+const DELAI_IA_MS = 8000;
 const MESSAGE_MAX = 500;
 
 export async function POST(req: Request) {
@@ -24,7 +24,12 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => null);
   const message = typeof body?.message === "string" ? body.message.trim() : "";
-  const historique = Array.isArray(body?.historique) ? body.historique : [];
+  // Ignore toute entrée d'historique malformée : une requête hostile ne doit
+  // jamais faire échouer la route avant le repli local.
+  const historique = (Array.isArray(body?.historique) ? body.historique : []).filter(
+    (h: unknown): h is { role: string; content: string } =>
+      !!h && typeof h === "object" && typeof (h as { content?: unknown }).content === "string"
+  );
 
   if (!message) {
     return NextResponse.json({ error: "Message requis" }, { status: 400 });
@@ -53,6 +58,7 @@ export async function POST(req: Request) {
         categorie: { select: { nom: true } },
       },
       orderBy: { title: "asc" },
+      take: 60,
     }),
     db.mealPlanEntry.findMany({
       where: {
@@ -79,12 +85,6 @@ export async function POST(req: Request) {
     })),
   };
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    // Mode dégradé « Charme local » instantané
-    return NextResponse.json(reponseCharmeLocal(message, contexte));
-  }
-
   const contexteTexte = formaterContexteCuisine(contexte);
 
   const systemPrompt = `Tu es Miamz, la mascotte culinaire kawaii de l'application SquishMiam. Tu es une petite boulette de riz onigiri kawaii avec une feuille verte sur la tête. Ton ton est chaleureux, bienveillant, gourmand, enthousiaste et concis (1 à 3 phrases max).
@@ -102,54 +102,28 @@ Règles de dialogue :
   "recetteTitre": "Titre exact de la recette proposée si applicable"
 }
 
-Humeurs disponibles : content, fier, affame, repu, fete, concentre, calin, taquin, inquiet, surpris, motive, relax.`;
+Humeurs disponibles : ${HUMEURS.join(", ")}.`;
 
   const messagesPayload = [
     { role: "system", content: systemPrompt },
-    ...historique.slice(-6).map((h: { role: string; content: string }) => ({
+    ...historique.slice(-12).map((h: { role: string; content: string }) => ({
       role: h.role === "user" ? "user" : "assistant",
       content: String(h.content || "").slice(0, 1000),
     })),
     { role: "user", content: message },
   ];
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const content = await demanderReponseIa(messagesPayload, {
+    maxTokens: 700,
+    temperature: 0.7,
+    timeoutMs: DELAI_IA_MS,
+  });
 
-  try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://squishmiam.vercel.app",
-        "X-Title": "SquishMiam",
-      },
-      body: JSON.stringify({
-        model: MODELE,
-        messages: messagesPayload,
-        temperature: 0.7,
-        max_tokens: 300,
-        response_format: { type: "json_object" },
-      }),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      return NextResponse.json(reponseCharmeLocal(message, contexte));
-    }
-
-    const data = await res.json().catch(() => null);
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) {
-      return NextResponse.json(reponseCharmeLocal(message, contexte));
-    }
-
-    const reponseMiamz = parserReponseMiamz(content, contexte.recettes);
-    return NextResponse.json(reponseMiamz);
-  } catch {
+  // Pas de clé, quota épuisé, modèles indisponibles : repli local garanti.
+  if (!content) {
     return NextResponse.json(reponseCharmeLocal(message, contexte));
-  } finally {
-    clearTimeout(timer);
   }
+
+  const reponseMiamz = parserReponseMiamz(content, contexte.recettes);
+  return NextResponse.json(reponseMiamz);
 }
