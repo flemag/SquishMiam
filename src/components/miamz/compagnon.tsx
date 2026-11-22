@@ -8,6 +8,7 @@ import { regardVers } from "@/lib/regard";
 import { bullesPourChemin } from "@/lib/themes";
 import { MiamzContext } from "./contexte";
 import MiamzSvg, { type MiamzSvgProps } from "./svg";
+import FeuilleChatMiamz from "./feuille-chat";
 
 /** Bouche par humeur ; défaut sourire. */
 const BOUCHES: Partial<Record<HumeurId, MiamzSvgProps["bouche"]>> = {
@@ -117,6 +118,7 @@ export default function Compagnon() {
   const [humeur, setHumeur] = useState<HumeurId>("content");
   const [variante, setVariante] = useState(0);
   const [bulle, setBulle] = useState<string | null>(null);
+  const [chatOuvert, setChatOuvert] = useState(false);
   const [rebond, setRebond] = useState(false);
   const [regard, setRegard] = useState({ dx: 0, dy: 0 });
   const [aSouris, setASouris] = useState(false);
@@ -245,27 +247,52 @@ export default function Compagnon() {
             bulle ? "" : "hidden"
           }`}
         >
-          {bulle}
+          <p>{bulle}</p>
+          <button
+            type="button"
+            onClick={() => setChatOuvert(true)}
+            className="pointer-events-auto mt-1 inline-flex min-h-11 items-center gap-1 rounded-full bg-[#A8E6CF]/30 px-3 text-xs font-semibold text-[#4A6741] hover:bg-[#A8E6CF]/50"
+          >
+            💬 Discuter avec moi
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={auClic}
-          aria-label="Miamz, ton compagnon repas"
-          className="pointer-events-auto block rounded-full focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
-        >
-          <div ref={racineRef}>
-            <MiamzSvg
-              taille={72}
-              yeux={regard}
-              bouche={BOUCHES[humeur] ?? "sourire"}
-              pose={humeur}
-              variante={variante}
-              animation={animation}
-              className="h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
-            />
-          </div>
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setChatOuvert(true)}
+            aria-label="Discuter avec Miamz"
+            className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full border border-bordure bg-white/95 px-3.5 text-xs font-medium text-miamz-vert shadow-sm transition hover:bg-[#A8E6CF]/30 focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
+          >
+            <span>💬</span>
+            <span className="hidden sm:inline">Discuter</span>
+          </button>
+          <button
+            type="button"
+            onClick={auClic}
+            aria-label="Miamz, ton compagnon repas"
+            className="pointer-events-auto block rounded-full focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
+          >
+            <div ref={racineRef}>
+              <MiamzSvg
+                taille={72}
+                yeux={regard}
+                bouche={BOUCHES[humeur] ?? "sourire"}
+                pose={humeur}
+                variante={variante}
+                animation={animation}
+                className="h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
+              />
+            </div>
+          </button>
+        </div>
       </div>
+
+      <FeuilleChatMiamz
+        ouvert={chatOuvert}
+        onFermer={() => setChatOuvert(false)}
+        humeurInitiale={humeur}
+      />
     </div>
   );
 }
