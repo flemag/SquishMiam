@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import FeuilleModale from "@/components/ui/feuille-modale";
 import MiamzSvg from "./svg";
+import { animationPourHumeur, BOUCHES } from "./visuels";
 import type { HumeurId } from "@/lib/humeurs";
 import type { ReponseMiamz } from "@/lib/chat-miamz";
 
@@ -43,20 +44,27 @@ export default function FeuilleChatMiamz({
   const [enCours, setEnCours] = useState(false);
   const [humeurMiamz, setHumeurMiamz] = useState<HumeurId>(humeurInitiale);
   const finMessagesRef = useRef<HTMLDivElement>(null);
+  const envoiEnCoursRef = useRef(false);
+  const compteurRef = useRef(0);
+
+  const nouvelId = (prefixe: string) => `${prefixe}-${++compteurRef.current}`;
 
   useEffect(() => {
+    if (!ouvert) return;
     const doux =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     finMessagesRef.current?.scrollIntoView({ behavior: doux ? "auto" : "smooth" });
-  }, [messages, enCours]);
+  }, [messages, enCours, ouvert]);
 
   async function envoyerMessage(texteAEnvoyer?: string) {
     const texte = (texteAEnvoyer ?? saisie).trim();
-    if (!texte || enCours) return;
+    // Verrou synchrone : deux appuis rapides ne peuvent pas envoyer deux fois.
+    if (!texte || enCours || envoiEnCoursRef.current) return;
+    envoiEnCoursRef.current = true;
 
     const messageUtilisateur: Message = {
-      id: `user-${Date.now()}`,
+      id: nouvelId("user"),
       role: "user",
       content: texte,
     };
@@ -66,7 +74,8 @@ export default function FeuilleChatMiamz({
     setEnCours(true);
 
     try {
-      const historique = messages.map((m) => ({
+      // Six échanges maximum (douze messages), comme côté serveur.
+      const historique = messages.slice(-12).map((m) => ({
         role: m.role,
         content: m.content,
       }));
@@ -77,15 +86,26 @@ export default function FeuilleChatMiamz({
         body: JSON.stringify({ message: texte, historique }),
       });
 
-      const data: ReponseMiamz | null = await res.json().catch(() => null);
-      if (!res.ok || !data || typeof data.reponse !== "string") {
-        throw new Error("Réponse invalide");
+      const data: (ReponseMiamz & { error?: string }) | null = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        const messageServeur =
+          res.status === 401
+            ? "Ta session a expiré. Reconnecte-toi pour continuer à discuter avec moi !"
+            : typeof data?.error === "string"
+              ? data.error
+              : "Oups ! Je n'arrive pas à joindre mon petit réseau culinaire. Réessaie dans un instant !";
+        throw new Error(messageServeur);
+      }
+
+      if (!data || typeof data.reponse !== "string") {
+        throw new Error("Miam ! J'ai eu un petit trou de mémoire. Réessaie dans un instant !");
       }
 
       setHumeurMiamz(data.humeur || "content");
 
       const messageMiamz: Message = {
-        id: `assistant-${Date.now()}`,
+        id: nouvelId("assistant"),
         role: "assistant",
         content: data.reponse,
         humeur: data.humeur,
@@ -93,17 +113,21 @@ export default function FeuilleChatMiamz({
       };
 
       setMessages((prev) => [...prev, messageMiamz]);
-    } catch {
+    } catch (erreur) {
       setMessages((prev) => [
         ...prev,
         {
-          id: `err-${Date.now()}`,
+          id: nouvelId("err"),
           role: "assistant",
-          content: "Oups ! Je n'arrive pas à me connecter au réseau culinaire. Réessaie dans un instant !",
+          content:
+            erreur instanceof Error
+              ? erreur.message
+              : "Oups ! Je n'arrive pas à me connecter au réseau culinaire. Réessaie dans un instant !",
           humeur: "inquiet",
         },
       ]);
     } finally {
+      envoiEnCoursRef.current = false;
       setEnCours(false);
     }
   }
@@ -120,7 +144,8 @@ export default function FeuilleChatMiamz({
           <MiamzSvg
             taille={48}
             pose={humeurMiamz}
-            bouche={humeurMiamz === "endormi" ? "baille" : "sourire"}
+            bouche={BOUCHES[humeurMiamz] ?? "sourire"}
+            animation={animationPourHumeur(humeurMiamz)}
             className="h-12 w-12 shrink-0"
           />
           <div>
@@ -208,7 +233,6 @@ export default function FeuilleChatMiamz({
             placeholder="Pose ta question à Miamz…"
             aria-label="Message pour Miamz"
             maxLength={500}
-            disabled={enCours}
             className="champ min-w-0 flex-1 rounded-full px-4"
           />
           <button

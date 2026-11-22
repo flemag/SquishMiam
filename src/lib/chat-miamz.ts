@@ -1,4 +1,4 @@
-import type { HumeurId } from "@/lib/humeurs";
+import { HUMEURS, type HumeurId } from "@/lib/humeurs";
 
 export type ReponseMiamz = {
   reponse: string;
@@ -21,22 +21,7 @@ export type ContexteCuisine = {
   }[];
 };
 
-const HUMEURS_VALIDES = new Set<HumeurId>([
-  "content",
-  "fier",
-  "decu",
-  "affame",
-  "repu",
-  "endormi",
-  "fete",
-  "concentre",
-  "calin",
-  "taquin",
-  "inquiet",
-  "surpris",
-  "motive",
-  "relax",
-]);
+const HUMEURS_VALIDES = new Set<HumeurId>(HUMEURS);
 
 /**
  * Formate le contexte culinaire pour guider Miamz et l'IA
@@ -69,70 +54,99 @@ export function formaterContexteCuisine(contexte: ContexteCuisine): string {
   return `Recettes enregistrées dans le carnet :\n${lignesRecettes}\n\nRepas déjà prévus cette semaine :\n${lignesPlan}`;
 }
 
+const REPONSE_INDECISE: ReponseMiamz = {
+  reponse: "Miam ! Je n'ai pas bien saisi ma propre réponse. Tu peux reformuler ?",
+  humeur: "surpris",
+};
+
+/** Les bulles affichent du texte brut : on retire le gras markdown. */
+function sansMarkdown(texte: string): string {
+  return texte.replace(/\*\*(.+?)\*\*/g, "$1").trim();
+}
+
 /**
  * Parse la réponse renvoyée par le modèle pour extraire texte, humeur et actions.
+ * Tolère les blocs ```json, le texte brut, et retombe sur une phrase amicale
+ * plutôt que d'afficher du JSON brut quand la réponse est inexploitable.
  */
 export function parserReponseMiamz(
   texteBrut: string,
   recettesDisponibles: { id: string; title: string }[]
 ): ReponseMiamz {
   if (!texteBrut || typeof texteBrut !== "string") {
-    return {
-      reponse: "Miam ! Je suis un peu perdu dans mes pensées, peux-tu répéter ?",
-      humeur: "surpris",
-    };
+    return REPONSE_INDECISE;
   }
 
-  // Nettoyage des éventuels blocs ```json
+  // Nettoyage des éventuels blocs ```json (y compris précédés d'un saut de ligne).
   const texteNettoye = texteBrut
+    .trim()
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
 
+  let parsed: unknown = null;
+  let jsonValide = false;
   try {
-    const parsed = JSON.parse(texteNettoye);
-    if (parsed && typeof parsed === "object") {
-      const reponse = typeof parsed.reponse === "string" ? parsed.reponse.trim() : "";
-      const humeurBrute = (parsed.humeur || "").toLowerCase().trim() as HumeurId;
-      const humeur: HumeurId = HUMEURS_VALIDES.has(humeurBrute) ? humeurBrute : "content";
-
-      const actions: { label: string; lien: string }[] = [];
-
-      // Détecter si une recette a été proposée
-      const recetteTitre = parsed.recetteTitre || parsed.recetteProposee;
-      let recetteTrouvee = null;
-      if (typeof recetteTitre === "string" && recetteTitre.trim()) {
-        const nomNormalise = recetteTitre.trim().toLowerCase();
-        recetteTrouvee = recettesDisponibles.find(
-          (r) => r.title.toLowerCase() === nomNormalise || nomNormalise.includes(r.title.toLowerCase())
-        );
-      }
-
-      if (recetteTrouvee) {
-        actions.push({
-          label: `Voir la recette : ${recetteTrouvee.title}`,
-          lien: `/recettes`,
-        });
-        actions.push({
-          label: "Ouvrir le planning",
-          lien: "/plan",
-        });
-      }
-
-      return {
-        reponse: reponse || texteBrut,
-        humeur,
-        actions: actions.length > 0 ? actions : undefined,
-      };
-    }
+    parsed = JSON.parse(texteNettoye);
+    jsonValide = true;
   } catch {
-    // Si ce n'est pas du JSON, on renvoie le texte brut gentiment
+    parsed = null;
   }
 
-  return {
-    reponse: texteBrut.trim(),
-    humeur: "content",
-  };
+  if (jsonValide) {
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return REPONSE_INDECISE;
+    }
+
+    const objet = parsed as Record<string, unknown>;
+    const reponse = typeof objet.reponse === "string" ? sansMarkdown(objet.reponse) : "";
+    if (!reponse) {
+      return REPONSE_INDECISE;
+    }
+
+    const humeurBrute =
+      typeof objet.humeur === "string" ? (objet.humeur.toLowerCase().trim() as HumeurId) : null;
+    const humeur: HumeurId = humeurBrute && HUMEURS_VALIDES.has(humeurBrute) ? humeurBrute : "content";
+
+    // Détecter la recette proposée : champ dédié, sinon titre cité dans le texte.
+    const recetteTitre =
+      typeof objet.recetteTitre === "string"
+        ? objet.recetteTitre
+        : typeof objet.recetteProposee === "string"
+          ? objet.recetteProposee
+          : null;
+
+    const candidates = [...recettesDisponibles].sort((a, b) => b.title.length - a.title.length);
+    const reponseMinuscule = reponse.toLowerCase();
+    const recetteTrouvee =
+      (recetteTitre
+        ? candidates.find(
+            (r) =>
+              r.title.toLowerCase() === recetteTitre.toLowerCase().trim() ||
+              recetteTitre.toLowerCase().includes(r.title.toLowerCase())
+          )
+        : undefined) ?? candidates.find((r) => reponseMinuscule.includes(r.title.toLowerCase()));
+
+    const actions: { label: string; lien: string }[] = [];
+    if (recetteTrouvee) {
+      actions.push({ label: `Voir la recette : ${recetteTrouvee.title}`, lien: "/recettes" });
+      actions.push({ label: "Ouvrir le planning", lien: "/plan" });
+    }
+
+    return {
+      reponse,
+      humeur,
+      actions: actions.length > 0 ? actions : undefined,
+    };
+  }
+
+  const texte = sansMarkdown(texteNettoye);
+  // JSON cassé (`{`, `[`, `null`…) : ne jamais l'afficher tel quel.
+  if (!texte || /^[[{]/.test(texte) || texte === "null" || texte === "undefined") {
+    return REPONSE_INDECISE;
+  }
+
+  return { reponse: texte, humeur: "content" };
 }
 
 /**
@@ -151,12 +165,28 @@ export function reponseCharmeLocal(message: string, contexte: ContexteCuisine): 
     };
   }
 
+  const titresPlanifies = new Set(contexte.repasPrevus.map((p) => p.titre.toLowerCase()));
+  const choisir = (liste: ContexteCuisine["recettes"]) => {
+    const nonPlanifiees = liste.filter((r) => !titresPlanifies.has(r.title.toLowerCase()));
+    const pool = nonPlanifiees.length > 0 ? nonPlanifiees : liste;
+    // Déterministe : le même message propose la même recette (testable).
+    return pool[msg.length % pool.length] ?? pool[0];
+  };
+
+  if (/^(bonjour|salut|coucou|hello|hey)\b/.test(msg)) {
+    return {
+      reponse:
+        "Coucou ! Je suis là pour t'aider à trouver une idée de repas. Tu veux quelque chose de rapide, de végétarien, ou je te propose une recette du carnet ? 🍙",
+      humeur: "content",
+    };
+  }
+
   // Filtrer par durée rapide si demandé
   if (msg.includes("rapide") || msg.includes("20 min") || msg.includes("vite") || msg.includes("express")) {
     const rapides = contexte.recettes.filter((r) => r.minutes && r.minutes <= 25);
-    const choix = rapides[0] || contexte.recettes[0];
+    const choix = choisir(rapides.length > 0 ? rapides : contexte.recettes);
     return {
-      reponse: `Pour aller vite, je te conseille **${choix.title}**${choix.minutes ? ` (prêt en ${choix.minutes} minutes)` : ""} ! C'est rapide et super bon. 🍙`,
+      reponse: `Pour aller vite, je te conseille ${choix.title}${choix.minutes ? ` (prêt en ${choix.minutes} minutes)` : ""} ! C'est rapide et super bon. 🍙`,
       humeur: "motive",
       actions: [
         { label: `Voir : ${choix.title}`, lien: "/recettes" },
@@ -172,9 +202,9 @@ export function reponseCharmeLocal(message: string, contexte: ContexteCuisine): 
         r.tags.some((t) => t.toLowerCase().includes("végé")) ||
         (r.categorieNom && r.categorieNom.toLowerCase().includes("végé"))
     );
-    const choix = veges[0] || contexte.recettes[0];
+    const choix = choisir(veges.length > 0 ? veges : contexte.recettes);
     return {
-      reponse: `Que dis-tu de **${choix.title}** ? C'est parfait pour un repas végé plein de saveurs ! 🌱`,
+      reponse: `Que dis-tu de ${choix.title} ? C'est parfait pour un repas végé plein de saveurs ! 🌱`,
       humeur: "content",
       actions: [
         { label: `Voir : ${choix.title}`, lien: "/recettes" },
@@ -184,12 +214,10 @@ export function reponseCharmeLocal(message: string, contexte: ContexteCuisine): 
   }
 
   // Choix par défaut : préférer une recette qui n'est pas encore planifiée cette semaine
-  const titresPlanifies = new Set(contexte.repasPrevus.map((p) => p.titre.toLowerCase()));
-  const nonPlanifiees = contexte.recettes.filter((r) => !titresPlanifies.has(r.title.toLowerCase()));
-  const choix = nonPlanifiees[Math.floor(Math.random() * nonPlanifiees.length)] || contexte.recettes[0];
+  const choix = choisir(contexte.recettes);
 
   return {
-    reponse: `Pour ce soir, je te propose **${choix.title}**${choix.minutes ? ` (${choix.minutes} min)` : ""} ! Ça te tente ? Miam miam ! ✨`,
+    reponse: `Pour ce soir, je te propose ${choix.title}${choix.minutes ? ` (${choix.minutes} min)` : ""} ! Ça te tente ? Miam miam ! ✨`,
     humeur: "motive",
     actions: [
       { label: `Voir : ${choix.title}`, lien: "/recettes" },

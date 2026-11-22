@@ -7,94 +7,9 @@ import { evaluerHumeur, type ContexteMiamz } from "@/lib/moteur-humeur";
 import { regardVers } from "@/lib/regard";
 import { bullesPourChemin } from "@/lib/themes";
 import { MiamzContext } from "./contexte";
-import MiamzSvg, { type MiamzSvgProps } from "./svg";
+import MiamzSvg from "./svg";
 import FeuilleChatMiamz from "./feuille-chat";
-
-/** Bouche par humeur ; défaut sourire. */
-const BOUCHES: Partial<Record<HumeurId, MiamzSvgProps["bouche"]>> = {
-  endormi: "baille",
-  affame: "rond",
-  surpris: "rond",
-  fete: "rond",
-};
-
-/**
- * Animation d'humeur : une par (humeur, variante) — l'index du tableau suit
- * pickVariante et VARIANTES_PAR_HUMEUR. Appliquée inline sur le groupe
- * .miamz-anim pour éviter toute guerre de spécificité avec le rebond et
- * prefers-reduced-motion (les keyframes vivent dans globals.css).
- */
-const ANIMATIONS: Record<HumeurId, string[]> = {
-  content: [
-    "miamz-bob 3.4s ease-in-out infinite",
-    "miamz-sway 4.2s ease-in-out infinite",
-    "miamz-breathe 3.8s ease-in-out infinite",
-    "miamz-tilt 5s ease-in-out infinite",
-  ],
-  fier: [
-    "miamz-pump 2.6s ease-in-out infinite",
-    "miamz-pop 2.2s ease-in-out infinite",
-    "miamz-bob 3s ease-in-out infinite",
-  ],
-  decu: [
-    "miamz-droop 3.6s ease-in-out infinite",
-    "miamz-droop 4.6s ease-in-out infinite",
-    "miamz-breathe 5s ease-in-out infinite",
-  ],
-  affame: [
-    "miamz-bob 1.8s ease-in-out infinite",
-    "miamz-wiggle 2s ease-in-out infinite",
-    "miamz-pop 1.8s ease-in-out infinite",
-  ],
-  repu: [
-    "miamz-breathe 4.4s ease-in-out infinite",
-    "miamz-droop 5s ease-in-out infinite",
-    "miamz-float 5.5s ease-in-out infinite",
-  ],
-  endormi: [
-    "miamz-snore 5s ease-in-out infinite",
-    "miamz-snore 6.5s ease-in-out infinite",
-    "none",
-  ],
-  fete: [
-    "miamz-dance 1.8s ease-in-out infinite",
-    "miamz-jump 1.4s ease-in-out infinite",
-    "miamz-spin 2.2s linear infinite",
-    "miamz-wiggle 1.2s ease-in-out infinite",
-  ],
-  concentre: ["none", "miamz-breathe 4.8s ease-in-out infinite", "miamz-tilt 6s ease-in-out infinite"],
-  calin: [
-    "miamz-float 4.6s ease-in-out infinite",
-    "miamz-sway 5s ease-in-out infinite",
-    "miamz-tilt 6s ease-in-out infinite",
-  ],
-  taquin: [
-    "miamz-wiggle 1.8s ease-in-out infinite",
-    "miamz-tilt 3.4s ease-in-out infinite",
-    "miamz-bob 2.6s ease-in-out infinite",
-  ],
-  inquiet: [
-    "miamz-tremble 1.2s ease-in-out infinite",
-    "miamz-tremble 1.6s ease-in-out infinite",
-    "miamz-droop 4s ease-in-out infinite",
-  ],
-  surpris: [
-    "miamz-pop 1.2s ease-in-out infinite",
-    "miamz-jump 1.6s ease-in-out infinite",
-    "miamz-tremble 1s ease-in-out infinite",
-  ],
-  motive: [
-    "miamz-bob 2.4s ease-in-out infinite",
-    "miamz-jump 2.2s ease-in-out infinite",
-    "miamz-pump 2.4s ease-in-out infinite",
-  ],
-  relax: [
-    "miamz-float 5s ease-in-out infinite",
-    "miamz-breathe 5.5s ease-in-out infinite",
-    "miamz-sway 6s ease-in-out infinite",
-    "miamz-tilt 7s ease-in-out infinite",
-  ],
-};
+import { ANIMATIONS, BOUCHES } from "./visuels";
 
 const MINUTE = 60_000;
 const DUREE_BULLE_MS = 6000;
@@ -236,63 +151,67 @@ export default function Compagnon() {
     : (ANIMATIONS[humeur][variante] ?? ANIMATIONS[humeur][0] ?? "");
 
   return (
-    <div
-      data-regard={aSouris ? "souris" : "idle"}
-      className="pointer-events-none fixed bottom-[calc(4.5rem+max(env(safe-area-inset-bottom),0.25rem))] right-3 z-40 sm:bottom-[max(env(safe-area-inset-bottom),1rem)] sm:right-5"
-    >
-      <div className="flex flex-col items-end gap-2">
-        <div
-          aria-live="polite"
-          className={`miamz-bulle max-w-[min(16rem,calc(100vw-2rem))] rounded-2xl rounded-br-sm border border-bordure bg-white/95 px-3 py-2 text-center text-sm text-miamz-vert shadow-md ${
-            bulle ? "" : "hidden"
-          }`}
-        >
-          <p>{bulle}</p>
-          <button
-            type="button"
-            onClick={() => setChatOuvert(true)}
-            className="pointer-events-auto mt-1 inline-flex min-h-11 items-center gap-1 rounded-full bg-[#A8E6CF]/30 px-3 text-xs font-semibold text-[#4A6741] hover:bg-[#A8E6CF]/50"
+    <>
+      <div
+        data-regard={aSouris ? "souris" : "idle"}
+        className="pointer-events-none fixed bottom-[calc(4.5rem+max(env(safe-area-inset-bottom),0.25rem))] right-3 z-40 sm:bottom-[max(env(safe-area-inset-bottom),1rem)] sm:right-5"
+      >
+        <div className="flex flex-col items-end gap-2">
+          <div
+            aria-live="polite"
+            className={`miamz-bulle max-w-[min(16rem,calc(100vw-2rem))] rounded-2xl rounded-br-sm border border-bordure bg-white/95 px-3 py-2 text-center text-sm text-miamz-vert shadow-md ${
+              bulle ? "" : "hidden"
+            }`}
           >
-            💬 Discuter avec moi
-          </button>
-        </div>
+            <p>{bulle}</p>
+            <button
+              type="button"
+              onClick={() => setChatOuvert(true)}
+              className="pointer-events-auto mt-1 inline-flex min-h-11 items-center gap-1 rounded-full bg-[#A8E6CF]/30 px-3 text-xs font-semibold text-[#4A6741] hover:bg-[#A8E6CF]/50"
+            >
+              💬 Discuter avec moi
+            </button>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setChatOuvert(true)}
-            aria-label="Discuter avec Miamz"
-            className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full border border-bordure bg-white/95 px-3.5 text-xs font-medium text-miamz-vert shadow-sm transition hover:bg-[#A8E6CF]/30 focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
-          >
-            <span>💬</span>
-            <span className="hidden sm:inline">Discuter</span>
-          </button>
-          <button
-            type="button"
-            onClick={auClic}
-            aria-label="Miamz, ton compagnon repas"
-            className="pointer-events-auto block rounded-full focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
-          >
-            <div ref={racineRef}>
-              <MiamzSvg
-                taille={72}
-                yeux={regard}
-                bouche={BOUCHES[humeur] ?? "sourire"}
-                pose={humeur}
-                variante={variante}
-                animation={animation}
-                className="h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
-              />
-            </div>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setChatOuvert(true)}
+              aria-label="Discuter avec Miamz"
+              className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full border border-bordure bg-white/95 px-3.5 text-xs font-medium text-miamz-vert shadow-sm transition hover:bg-[#A8E6CF]/30 focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
+            >
+              <span>💬</span>
+              <span className="hidden sm:inline">Discuter</span>
+            </button>
+            <button
+              type="button"
+              onClick={auClic}
+              aria-label="Miamz, ton compagnon repas"
+              className="pointer-events-auto block rounded-full focus-visible:outline-2 focus-visible:outline-[#e07a5f]"
+            >
+              <div ref={racineRef}>
+                <MiamzSvg
+                  taille={72}
+                  yeux={regard}
+                  bouche={BOUCHES[humeur] ?? "sourire"}
+                  pose={humeur}
+                  variante={variante}
+                  animation={animation}
+                  className="h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
+                />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Hors du conteneur pointer-events-none : la feuille modale doit rester
+          interactive (saisie, suggestions, fermeture au toucher). */}
       <FeuilleChatMiamz
         ouvert={chatOuvert}
         onFermer={() => setChatOuvert(false)}
         humeurInitiale={humeur}
       />
-    </div>
+    </>
   );
 }

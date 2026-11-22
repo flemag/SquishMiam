@@ -68,6 +68,50 @@ describe("parserReponseMiamz", () => {
     expect(res.reponse).toContain("Bonjour Steve");
     expect(res.humeur).toBe("content");
   });
+
+  it("remplace null et les tableaux JSON par une phrase amicale", () => {
+    for (const texte of ["null", "[]", "[1,2,3]"]) {
+      const res = parserReponseMiamz(texte, recettes);
+      expect(res.reponse).not.toBe("null");
+      expect(res.reponse).not.toContain("[");
+      expect(res.humeur).toBe("surpris");
+    }
+  });
+
+  it("ignore une humeur non textuelle sans planter", () => {
+    const res = parserReponseMiamz('{"reponse":"Miam !","humeur":42}', recettes);
+    expect(res.reponse).toBe("Miam !");
+    expect(res.humeur).toBe("content");
+  });
+
+  it("tolère des espaces avant les balises de code", () => {
+    const texte = `\n  \`\`\`json\n{"reponse":"Ça marche !","humeur":"fier"}\n\`\`\`  \n`;
+    const res = parserReponseMiamz(texte, recettes);
+    expect(res.reponse).toBe("Ça marche !");
+    expect(res.humeur).toBe("fier");
+  });
+
+  it("retire le gras markdown des bulles", () => {
+    const res = parserReponseMiamz('{"reponse":"Essaie **le curry** ce soir !","humeur":"content"}', recettes);
+    expect(res.reponse).toBe("Essaie le curry ce soir !");
+  });
+
+  it("détecte une recette citée sans champ recetteTitre", () => {
+    const res = parserReponseMiamz(
+      '{"reponse":"Je te propose le Curry de lentilles, c\'est parfait !","humeur":"motive"}',
+      recettes
+    );
+    expect(res.actions?.[0]).toEqual({
+      label: "Voir la recette : Curry de lentilles",
+      lien: "/recettes",
+    });
+  });
+
+  it("ne montre pas un JSON cassé", () => {
+    const res = parserReponseMiamz('{"reponse":"Miam"', recettes);
+    expect(res.reponse).toContain("reformuler");
+    expect(res.humeur).toBe("surpris");
+  });
 });
 
 describe("reponseCharmeLocal", () => {
@@ -95,5 +139,30 @@ describe("reponseCharmeLocal", () => {
     const res = reponseCharmeLocal("On mange quoi ?", { recettes: [], repasPrevus: [] });
     expect(res.reponse).toContain("Tu n'as pas encore de recette");
     expect(res.humeur).toBe("taquin");
+  });
+
+  it("salue sans proposer un dîner", () => {
+    const res = reponseCharmeLocal("Bonjour Miamz !", contexte);
+    expect(res.reponse).toContain("Coucou");
+    expect(res.actions).toBeUndefined();
+  });
+
+  it("préfère une recette rapide non déjà planifiée", () => {
+    const ctx: ContexteCuisine = {
+      recettes: [
+        ...contexte.recettes,
+        { id: "3", title: "Omelette express", minutes: 10, tags: ["rapide"] },
+      ],
+      repasPrevus: [{ dateIso: "2026-11-22", slot: "DINER", titre: "Pâtes au pesto" }],
+    };
+    const res = reponseCharmeLocal("une idée rapide en moins de 20 min ?", ctx);
+    expect(res.reponse).toContain("Omelette express");
+    expect(res.reponse).not.toContain("Pâtes au pesto");
+  });
+
+  it("est déterministe pour un même message", () => {
+    const a = reponseCharmeLocal("On mange quoi ce soir ?", contexte);
+    const b = reponseCharmeLocal("On mange quoi ce soir ?", contexte);
+    expect(a).toEqual(b);
   });
 });
