@@ -70,12 +70,13 @@ Règles :
         "X-Title": "SquishMiam",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp:free",
+        model: "google/gemma-4-31b-it:free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Voici le contenu de la page web :\n\n${texteEpure}` },
         ],
         temperature: 0.1,
+        response_format: { type: "json_object" },
       }),
       signal: controller.signal,
     });
