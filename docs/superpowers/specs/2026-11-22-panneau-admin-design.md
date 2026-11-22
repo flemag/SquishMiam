@@ -197,7 +197,7 @@ Toutes les routes vérifient la session **et** le rôle ADMIN ; réponses JSON e
 
 | Méthode & route | Corps | Succès | Erreurs |
 |---|---|---|---|
-| `PATCH /api/admin/categories/[id]` | `{ nom }` ou `{ masquee }` | `200 { categorie }` | 400 nom vide / `cat-autre` masquée ; 404 ; 409 collision avec `collision: { id, nom }` |
+| `PATCH /api/admin/categories/[id]` | `{ nom }` ou `{ masquee }` | `200 { categorie }` | 400 nom vide ou > 60 / `cat-autre` masquée ; 404 ; 409 collision avec `collision: { id, nom }` |
 | `POST /api/admin/categories/[id]/fusionner` | `{ cibleId }` | `200 { deplacees }` | 400 même catégorie / source `cat-autre` / cible masquée ; 404 source ou cible |
 | `PATCH /api/admin/users/[id]` | `{ role: "USER" \| "ADMIN" }` | `200 { user }` | 400 rôle invalide ou soi-même ; 404 |
 | `POST /api/admin/users/[id]/acces` | `{ jours: 7 \| 30 \| 90 \| null }` | `200 { cle }` (clé courante prolongée) | 400 valeur invalide ; 404 utilisateur ; 409 aucune clé active ou accès déjà illimité |
@@ -213,10 +213,10 @@ Cas testés : semaine vide incluse ; lundi 00:00 UTC commence une nouvelle semai
 
 ### `src/lib/admin-categories.ts`
 
-- `decisionRenommage(nom, id, categories)` → `{ ok: true, cle }` ou `{ ok: false, raison: "vide" }` / `{ ok: false, raison: "collision", categorie }`.
+- `decisionRenommage(nom, id, categories)` → `{ ok: true, cle }` ou `{ ok: false, raison: "vide" | "trop-long" }` / `{ ok: false, raison: "collision", categorie }`.
 - `decisionFusion(sourceId, cibleId, categories)` → `{ ok: true }` ou raison `"meme-categorie"`, `"source-autre"`, `"inconnue"`, `"cible-masquee"`.
 
-Cas testés : accents/casse/espaces normalisés ; collision avec une autre catégorie ; variante de son propre nom acceptée ; nom vide ; fusion vers soi refusée ; fusion de `cat-autre` refusée ; cible inconnue ou masquée refusée.
+Cas testés : accents/casse/espaces normalisés ; collision avec une autre catégorie ; variante de son propre nom acceptée ; nom vide ; nom de 61 caractères refusé ; nom de 60 caractères accepté ; fusion vers soi refusée ; fusion de `cat-autre` refusée ; cible inconnue ou masquée refusée ; source masquée acceptée.
 
 ### `src/lib/admin-acces.ts`
 
@@ -247,7 +247,7 @@ Cas testés : aucune clé active → `null` ; illimitée prioritaire ; expiratio
 
 ## Tests et vérification
 
-- Nouveaux tests purs : environ 18–22 cas sur les trois modules.
+- Nouveaux tests purs : environ 31 cas sur les trois modules, plus 3 cas de garde.
 - Cas de garde ajoutés dans `tests/guards.test.ts` : un membre licencié est refusé sur `/api/admin/*`, un admin passe.
 - Suite complète (`npm test`) et build (`npm run build`) verts avant chaque commit.
 - Vérification manuelle sur 360 px : onglets, modales, fusion, prolongation, révocation, recherche.
