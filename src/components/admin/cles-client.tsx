@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { messageErreur } from "@/lib/erreur-api";
 
 type CleVue = {
   id: string;
@@ -29,11 +30,6 @@ const STATUT_STYLES: Record<string, string> = {
 
 type Message = { texte: string; erreur: boolean };
 
-async function erreurDe(res: Response, defaut: string): Promise<string> {
-  const data = await res.json().catch(() => ({}));
-  return typeof data.error === "string" ? data.error : defaut;
-}
-
 export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
   const router = useRouter();
   const [count, setCount] = useState(5);
@@ -58,7 +54,7 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
         setMessage({ texte: `${count} clé(s) générée(s) ✨`, erreur: false });
         router.refresh();
       } else {
-        setMessage({ texte: await erreurDe(res, "Erreur pendant la génération."), erreur: true });
+        setMessage({ texte: await messageErreur(res, "Erreur pendant la génération."), erreur: true });
       }
     } catch {
       setMessage({ texte: "Génération impossible — réessaie.", erreur: true });
@@ -77,7 +73,7 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
       if (res.ok) {
         router.refresh();
       } else {
-        setErreurRevocation({ id, message: await erreurDe(res, "Révocation impossible — réessaie.") });
+        setErreurRevocation({ id, message: await messageErreur(res, "Révocation impossible — réessaie.") });
       }
     } catch {
       setErreurRevocation({ id, message: "Révocation impossible — réessaie." });
@@ -140,51 +136,44 @@ export default function ClesAdmin({ initialKeys }: { initialKeys: CleVue[] }) {
         {initialKeys.length === 0 ? (
           <p className="text-sm text-texte-tres-doux">Aucune clé pour le moment.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="text-xs uppercase tracking-wide text-texte-tres-doux">
-                  <th className="px-3 py-2">Code</th>
-                  <th className="px-3 py-2">Durée</th>
-                  <th className="px-3 py-2">Statut</th>
-                  <th className="px-3 py-2">Expire</th>
-                  <th className="px-3 py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {initialKeys.map((k) => (
-                  <tr key={k.id} className="border-t border-bordure">
-                    <td className="px-3 py-2 font-mono text-xs">{k.code}</td>
-                    <td className="px-3 py-2">{k.durationDays === null ? "∞" : `${k.durationDays} j`}</td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-full px-3 py-1 text-xs ${STATUT_STYLES[k.statut] ?? "bg-gray-100"}`}>
+          <ul className="flex flex-col gap-2">
+            {initialKeys.map((k) => (
+              <li key={k.id} className="rounded-xl border border-bordure p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="break-all font-mono text-xs">{k.code}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-texte-doux">
+                      <span
+                        className={`rounded-full px-2 py-0.5 ${STATUT_STYLES[k.statut] ?? "bg-gray-100"}`}
+                      >
                         {k.statut}
                       </span>
-                    </td>
-                    <td className="px-3 py-2 text-texte-doux">
-                      {k.expiresAt ? new Date(k.expiresAt).toLocaleDateString("fr-FR") : "—"}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {k.status !== "REVOKED" && (
-                        <button
-                          onClick={() => revoquer(k.id)}
-                          disabled={revocation !== null}
-                          className="min-h-11 rounded-full px-3 py-1 text-xs text-danger hover:bg-[#FFB5C2]/20 disabled:opacity-60"
-                        >
-                          {revocation === k.id ? "Révocation…" : "Révoquer"}
-                        </button>
-                      )}
-                      {erreurRevocation?.id === k.id && (
-                        <p role="status" aria-live="polite" className="mt-1 text-xs text-danger">
-                          {erreurRevocation.message}
-                        </p>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <span>{k.durationDays === null ? "Illimitée" : `${k.durationDays} j`}</span>
+                      <span>
+                        {k.expiresAt
+                          ? `Expire le ${new Date(k.expiresAt).toLocaleDateString("fr-FR")}`
+                          : "Sans expiration"}
+                      </span>
+                    </div>
+                  </div>
+                  {k.status !== "REVOKED" && (
+                    <button
+                      onClick={() => revoquer(k.id)}
+                      disabled={revocation !== null}
+                      className="min-h-11 shrink-0 rounded-full px-3 text-xs text-danger hover:bg-[#FFB5C2]/20 disabled:opacity-60"
+                    >
+                      {revocation === k.id ? "Révocation…" : "Révoquer"}
+                    </button>
+                  )}
+                </div>
+                {erreurRevocation?.id === k.id && (
+                  <p role="status" aria-live="polite" className="mt-2 text-xs text-danger">
+                    {erreurRevocation.message}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </div>
