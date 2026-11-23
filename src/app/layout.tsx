@@ -3,6 +3,7 @@ import { Fredoka } from "next/font/google";
 import { cookies } from "next/headers";
 import { themeDepuisValeur } from "@/lib/themes";
 import FondAnime from "@/components/fond-anime";
+import SessionProviderWrapper from "@/components/session-provider";
 import "./globals.css";
 
 const fredoka = Fredoka({
@@ -44,8 +45,10 @@ export default async function RootLayout({
   return (
     <html lang="fr" data-theme={theme}>
       <body className={`${fredoka.variable} antialiased`}>
-        <FondAnime />
-        {children}
+        <SessionProviderWrapper>
+          <FondAnime />
+          {children}
+        </SessionProviderWrapper>
       </body>
     </html>
   );
