@@ -17,9 +17,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? await db.mealPlanEntry.count({ where: { ownerId: userId, date: { gte: debut, lt: fin } } })
     : 0;
 
+  const utilisateur = userId
+    ? await db.user.findUnique({ where: { id: userId }, select: { role: true } })
+    : null;
+
   return (
     <div className="min-h-screen">
-      <NavBar />
+      <NavBar estAdmin={utilisateur?.role === "ADMIN"} />
       <FournisseurMiamz repasSemaine={repasSemaine}>
         <div className="mx-auto max-w-5xl px-4 pb-24 py-6 sm:pb-6">{children}</div>
         <Compagnon />

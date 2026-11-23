@@ -53,6 +53,23 @@ function Ideconnexion({ className }: { className?: string }) {
   );
 }
 
+function Ibouclier({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
 function Ipalette({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
@@ -140,7 +157,7 @@ function SelecteurTheme() {
   );
 }
 
-export default function NavBar() {
+export default function NavBar({ estAdmin }: { estAdmin: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -168,6 +185,15 @@ export default function NavBar() {
                 </Link>
               );
             })}
+            {estAdmin && (
+              <Link
+                href="/admin"
+                aria-label="Panneau admin"
+                className="flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-medium text-[#4A6741] transition hover:bg-[#A8E6CF]/30"
+              >
+                <Ibouclier className="h-4 w-4" /> Admin
+              </Link>
+            )}
             <SelecteurTheme />
             <button
               onClick={() => signOut({ callbackUrl: "/connexion" })}
@@ -178,6 +204,16 @@ export default function NavBar() {
             </button>
           </nav>
           <div className="flex items-center gap-1 sm:hidden">
+            {estAdmin && (
+              <Link
+                href="/admin"
+                aria-label="Panneau admin"
+                title="Panneau admin"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[#4A6741] transition hover:bg-[#A8E6CF]/30"
+              >
+                <Ibouclier className="h-5 w-5" />
+              </Link>
+            )}
             <SelecteurTheme />
             <button
               onClick={() => signOut({ callbackUrl: "/connexion" })}
