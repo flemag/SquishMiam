@@ -28,6 +28,24 @@ describe("routeGuard", () => {
     );
   });
 
+  it("non-admin sur /api/admin → /", () => {
+    expect(
+      routeGuard("/api/admin/keys", { hasSession: true, isAdmin: false, licenseOk: true })
+    ).toEqual({ allow: false, redirectTo: "/" });
+  });
+
+  it("admin sur /api/admin → autorisé", () => {
+    expect(
+      routeGuard("/api/admin/keys", { hasSession: true, isAdmin: true, licenseOk: true }).allow
+    ).toBe(true);
+  });
+
+  it("non-admin sans clé sur /api/admin → / (le rôle prime)", () => {
+    expect(
+      routeGuard("/api/admin/keys", { hasSession: true, isAdmin: false, licenseOk: false })
+    ).toEqual({ allow: false, redirectTo: "/" });
+  });
+
   it("admin sur /admin → autorisé", () => {
     expect(routeGuard("/admin/cles", { hasSession: true, isAdmin: true, licenseOk: true }).allow).toBe(
       true
