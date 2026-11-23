@@ -83,8 +83,9 @@ model MealPlanEntry {
   recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   ownerId  String
   owner    User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  order    Int      @default(0)
 
-  @@unique([ownerId, date, slot])
+  @@unique([ownerId, date, slot, order])
 }
 
 enum MealSlot {

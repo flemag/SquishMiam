@@ -51,12 +51,14 @@ export async function POST(req: Request) {
 
   // Jamais d'écrasement silencieux : une case occupée est un conflit (409),
   // y compris hors UI (deux onglets, deux appareils).
+  // Nouveau index unique : [ownerId, date, slot, order] — nouvelle entrée a order = 0.
   const existante = await db.mealPlanEntry.findUnique({
     where: {
-      ownerId_date_slot: {
+      ownerId_date_slot_order: {
         ownerId: userId,
         date: dateObj,
         slot,
+        order: 0,
       },
     },
   });
@@ -68,7 +70,7 @@ export async function POST(req: Request) {
   // touchée forment une seule transaction (jamais de liste désynchronisée).
   const entry = await db.$transaction(async (tx) => {
     const created = await tx.mealPlanEntry.create({
-      data: { date: dateObj, slot, recipeId, servings, ownerId: userId },
+      data: { date: dateObj, slot, recipeId, servings, ownerId: userId, order: 0 },
     });
     await synchroniserCourses(tx, userId, [created.date]);
     return created;

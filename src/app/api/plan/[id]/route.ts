@@ -33,15 +33,55 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!recipe) return NextResponse.json({ error: "Recette introuvable" }, { status: 404 });
     data.recipeId = body.recipeId;
   }
+  if (Number.isInteger(Number(body.order)) && Number(body.order) >= 0) {
+    data.order = Number(body.order);
+  }
 
   // Date d'origine lue avant l'update : si le repas change de semaine, les DEUX
   // semaines (ancienne et nouvelle) doivent être resynchronisées.
   const dateOrigine = existante.date;
   const dateCible = data.date instanceof Date ? data.date : dateOrigine;
 
+  const dateChanged = data.date instanceof Date && data.date.getTime() !== existante.date.getTime();
+  const slotChanged = data.slot && data.slot !== existante.slot;
+  const orderChanged = data.order !== undefined && data.order !== existante.order;
+
   try {
     // Liste de courses vivante : update + synchronisation dans la même transaction.
     const entry = await db.$transaction(async (tx) => {
+      // Si date/slot/order changent, gérer le décalage des autres entrées
+      if (dateChanged || slotChanged || orderChanged) {
+        const targetDate = data.date instanceof Date ? data.date : existante.date;
+        const targetSlot: Slot = (data.slot ?? existante.slot) as Slot;
+        const targetOrder: number = (data.order ?? existante.order) as number;
+
+        // Décaler les entrées existantes du créneau cible qui ont order >= targetOrder
+        await tx.mealPlanEntry.updateMany({
+          where: {
+            ownerId: userId,
+            date: targetDate,
+            slot: targetSlot,
+            order: { gte: targetOrder },
+            NOT: { id: existante.id },
+          },
+          data: { order: { increment: 1 } },
+        });
+
+        // Si l'entrée vient d'un autre créneau, décrémenter l'ancien créneau
+        if (dateChanged || slotChanged) {
+          await tx.mealPlanEntry.updateMany({
+            where: {
+              ownerId: userId,
+              date: existante.date,
+              slot: existante.slot,
+              order: { gt: existante.order },
+            },
+            data: { order: { decrement: 1 } },
+          });
+        }
+        data.order = targetOrder;
+      }
+
       const miseAJour = await tx.mealPlanEntry.update({ where: { id }, data });
       await synchroniserCourses(tx, userId, [dateOrigine, dateCible]);
       return miseAJour;
