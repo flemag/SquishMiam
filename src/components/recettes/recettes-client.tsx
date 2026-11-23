@@ -41,7 +41,21 @@ export default function RecettesClient({
   const [tri, setTri] = useState<Tri>("recent");
   const [recetteOuverte, setRecetteOuverte] = useState<VueRechercheable | null>(null);
 
-  const tagsTous = [...new Set(recettes.flatMap((r) => r.tags))].sort((x, y) => x.localeCompare(y, "fr"));
+  // Compter la fréquence de chaque tag
+  const tagCounts = new Map<string, number>();
+  for (const r of recettes) {
+    for (const t of r.tags) {
+      tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+    }
+  }
+
+  // Seuil : afficher les tags utilisés au moins 2 fois par défaut
+  const [afficherRares, setAfficherRares] = useState(false);
+  const seuil = afficherRares ? 1 : 2;
+  const tagsTous = [...tagCounts.entries()]
+    .filter(([, count]) => count >= seuil)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"))
+    .map(([tag]) => tag);
 
   const recettesRecherchables: VueRechercheable[] = recettes.map((r) => ({
     ...r,
@@ -120,22 +134,35 @@ export default function RecettesClient({
       </div>
 
       {tagsTous.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {tagsTous.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => basculeTag(t)}
-              aria-pressed={tagsChoisis.includes(t)}
-              className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
-                tagsChoisis.includes(t)
-                  ? "bg-[#4A6741] text-white"
-                  : "border border-bordure bg-white text-texte-doux"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {tagsTous.map((t) => {
+            const count = tagCounts.get(t) || 0;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => basculeTag(t)}
+                aria-pressed={tagsChoisis.includes(t)}
+                title={`${count} recette${count > 1 ? "s" : ""}`}
+                className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
+                  tagsChoisis.includes(t)
+                    ? "bg-[#4A6741] text-white"
+                    : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                {t}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setAfficherRares((v) => !v)}
+            aria-pressed={afficherRares}
+            className="min-h-9 rounded-full px-3 text-sm font-medium transition border border-bordure bg-white text-texte-doux hover:bg-[#A8E6CF]/30"
+            title={afficherRares ? "Masquer les tags rares (1 recette)" : "Afficher les tags rares (1 recette)"}
+          >
+            {afficherRares ? "Masquer rares" : "Voir rares"}
+          </button>
         </div>
       )}
 
