@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 async function proprietaireOuRefus(id: string, expectedUserId: string) {
   const recipe = await db.recipe.findUnique({ where: { id } });
   if (!recipe || recipe.createdById !== expectedUserId) return null;
+  if (recipe.editable === false) return null; // Copie lecture seule : modifications interdites
   return recipe;
 }
 
