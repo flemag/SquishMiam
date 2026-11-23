@@ -391,27 +391,27 @@ export default function RecetteCard({
       {/* Barre d'actions (boutons conditionnels) */}
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {estAuteur && !recette.isPublic && (
-          <button type="button" onClick={ouvrirPublier} disabled={enCours} className="bouton min-h-9 px-3 text-sm">
+          <button type="button" onClick={(e) => { e.stopPropagation(); ouvrirPublier(); }} disabled={enCours} className="bouton min-h-9 px-3 text-sm">
             Publier
           </button>
         )}
         {estAuteur && recette.isPublic && (
-          <button type="button" onClick={ouvrirRetirer} disabled={enCours} className="bouton-secondaire min-h-9 px-3 text-sm">
+          <button type="button" onClick={(e) => { e.stopPropagation(); ouvrirRetirer(); }} disabled={enCours} className="bouton-secondaire min-h-9 px-3 text-sm">
             Retirer
           </button>
         )}
         {!estAuteur && recette.isPublic && !estValideeRecette && (
-          <button type="button" onClick={ouvrirValider} disabled={enCours} className="bouton min-h-9 px-3 text-sm">
+          <button type="button" onClick={(e) => { e.stopPropagation(); ouvrirValider(); }} disabled={enCours} className="bouton min-h-9 px-3 text-sm">
             Valider ({recette.validationCount}/3)
           </button>
         )}
         {!estAuteur && estValideeRecette && peutPartagerRecette && !recette.isSharedCopy && (
-          <button type="button" onClick={ouvrirPartager} disabled={enCours} className="bouton min-h-9 px-3 text-sm">
+          <button type="button" onClick={(e) => { e.stopPropagation(); ouvrirPartager(); }} disabled={enCours} className="bouton min-h-9 px-3 text-sm">
             Ajouter à mes recettes
           </button>
         )}
         {!estAuteur && recette.isPublic && (
-          <button type="button" onClick={ouvrirSignaler} disabled={enCours} className="bouton-danger min-h-9 px-3 text-sm">
+          <button type="button" onClick={(e) => { e.stopPropagation(); ouvrirSignaler(); }} disabled={enCours} className="bouton-danger min-h-9 px-3 text-sm">
             Signaler
           </button>
         )}
