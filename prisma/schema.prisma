@@ -9,19 +9,24 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  role         Role     @default(USER)
-  licenseKeys  LicenseKey[] @relation("activatedBy")
-  recipes      Recipe[]
-  mealPlan     MealPlanEntry[]
-  groceryItems GroceryListItem[]
-  accounts     Account[]
-  sessions     Session[]
-  createdAt    DateTime @default(now())
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  emailVerified       DateTime?
+  name                String?
+  image               String?
+  role                Role     @default(USER)
+  licenseKeys         LicenseKey[] @relation("activatedBy")
+  recipes             Recipe[]
+  mealPlan            MealPlanEntry[]
+  groceryItems        GroceryListItem[]
+  accounts            Account[]
+  sessions            Session[]
+  tokens              Int       @default(0)
+  validatedRecipes    String[]  // recipe IDs validées
+  sharedRecipes       String[]  // recipe IDs partagées
+  tokenTransactions   TokenTransaction[]
+  reports             Report[]  // signalements faits par l'utilisateur
+  createdAt           DateTime @default(now())
 }
 
 enum Role {
@@ -48,19 +53,29 @@ enum LicenseStatus {
 }
 
 model Recipe {
-  id          String          @id @default(cuid())
-  title       String
-  servings    Int             @default(2)
-  minutes     Int?
-  tags        String[]
-  ingredients Json // [{ nom: string, quantite?: number, unite?: string }]
-  steps       String[]
-  createdById String
-  createdBy   User            @relation(fields: [createdById], references: [id])
-  categorieId String?
-  categorie   Categorie?      @relation(fields: [categorieId], references: [id], onDelete: SetNull)
-  entries     MealPlanEntry[]
-  createdAt   DateTime        @default(now())
+  id              String          @id @default(cuid())
+  title           String
+  servings        Int             @default(2)
+  minutes         Int?
+  tags            String[]
+  ingredients     Json // [{ nom: string, quantite?: number, unite?: string }]
+  steps           String[]
+  createdById     String
+  createdBy       User            @relation(fields: [createdById], references: [id])
+  categorieId     String?
+  categorie       Categorie?      @relation(fields: [categorieId], references: [id], onDelete: SetNull)
+  entries         MealPlanEntry[]
+  isPublic        Boolean         @default(false)
+  publishedAt     DateTime?
+  validatedAt     DateTime?
+  validationCount Int             @default(0)
+  validators      String[]        // user IDs ayant validé
+  sharedWith      String[]        // user IDs ayant ajouté à leurs recettes
+  isSharedCopy    Boolean         @default(false)
+  sourceRecipeId  String?
+  editable        Boolean         @default(true)
+  reports         Report[]
+  createdAt       DateTime        @default(now())
 
   @@index([categorieId])
 }
@@ -113,6 +128,34 @@ model GroceryListItem {
 enum GroceryItemSource {
   PLAN
   MANUEL
+}
+
+model Report {
+  id        String       @id @default(cuid())
+  recipeId  String
+  recipe    Recipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter  User         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason    String       // "spam" | "inapproprié" | "autre"
+  detail    String?
+  status    ReportStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+}
+
+model TokenTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int      // +1 pour validation, -X pour achats futurs
+  reason    String   // "validation" | "achat" | "bonus"
+  recipeId  String?  // recette concernée
+  createdAt DateTime @default(now())
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
 }
 
 // Modèles standards de l'adaptateur Auth.js (@auth/prisma-adapter)
