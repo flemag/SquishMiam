@@ -53,6 +53,12 @@ export default async function RecettesPage() {
             steps: r.steps,
             categorieId: r.categorieId,
             categorieNom: r.categorie?.nom ?? null,
+            isPublic: r.isPublic,
+            validatedAt: r.validatedAt,
+            validationCount: r.validationCount,
+            isSharedCopy: r.isSharedCopy,
+            createdById: r.createdById,
+            validators: r.validators,
           }))}
         />
       )}

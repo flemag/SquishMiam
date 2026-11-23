@@ -14,6 +14,12 @@ export type RecetteFiche = {
   steps: unknown;
   categorieId: string | null;
   categorieNom: string | null;
+  isPublic: boolean;
+  validatedAt: Date | string | null;
+  validationCount: number;
+  isSharedCopy: boolean;
+  createdById: string;
+  validators: string[];
 };
 
 /** Nom + « — quantite unite » si présents ; tolérant (Json Prisma). */

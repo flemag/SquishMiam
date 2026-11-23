@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   filtrerRecettes,
   nomsIngredients,
@@ -34,6 +35,8 @@ export default function RecettesClient({
   recettes: RecetteVue[];
   categories: CategorieVue[];
 }) {
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const [requete, setRequete] = useState("");
   const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
   const [tagsChoisis, setTagsChoisis] = useState<string[]>([]);
@@ -209,7 +212,7 @@ export default function RecettesClient({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibles.map((r) => (
-            <RecetteCard key={r.id} recette={r} onOuvrir={() => setRecetteOuverte(r)} />
+            <RecetteCard key={r.id} recette={r} onOuvrir={() => setRecetteOuverte(r)} currentUserId={currentUserId} />
           ))}
         </div>
       )}
