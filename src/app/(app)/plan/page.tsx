@@ -25,7 +25,16 @@ export default async function PlanPage({
   const [entries, recipes, categoriesTriees] = await Promise.all([
     db.mealPlanEntry.findMany({
       where: { ownerId: userId, date: { gte: debut, lt: fin } },
-      include: { recipe: { select: { id: true, title: true } } },
+      select: {
+        id: true,
+        date: true,
+        slot: true,
+        servings: true,
+        recipeId: true,
+        order: true,
+        recipe: { select: { id: true, title: true } },
+      },
+      orderBy: [{ date: "asc" }, { slot: "asc" }, { order: "asc" }],
     }),
     db.recipe.findMany({
       where: { createdById: userId },
