@@ -88,6 +88,7 @@ export default async function PlanPage({
             servings: e.servings,
             recipeId: e.recipeId,
             title: e.recipe.title,
+            order: e.order,
           }))}
           recipes={recipes}
           categories={categoriesTriees}
