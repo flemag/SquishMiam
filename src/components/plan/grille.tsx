@@ -36,12 +36,10 @@ export default function GrillePlan({
 
   const { dragState, startDrag, moveDrag, endDrag, cancelDrag } = useDragRepas();
 
-  // Clés occupées pour FeuilleRepas (éviter d'écraser une case)
   const clesOccupees = new Set(
     entries.filter((e) => e.id !== feuille?.entry?.id).map((e) => `${e.date.slice(0, 10)}|${e.slot}`)
   );
 
-  // Handler unifiés
   const getClientCoords = (e: React.TouchEvent | React.MouseEvent): { x: number; y: number } => {
     if ("touches" in e) {
       return { x: e.touches[0]?.clientX ?? 0, y: e.touches[0]?.clientY ?? 0 };
@@ -62,7 +60,6 @@ export default function GrillePlan({
   const handleDragEnd = async () => {
     const result = await endDrag();
     if (result) {
-      // Appel API PATCH avec result { date, slot, order }
       const entryId = dragState?.entryId;
       if (entryId) {
         try {
@@ -88,7 +85,6 @@ export default function GrillePlan({
     cancelDrag();
   };
 
-  // Grouper les entrées par créneau et trier par order
   const entriesInCell = (date: string, slot: Slot) =>
     entries
       .filter((e) => e.date.slice(0, 10) === date.slice(0, 10) && e.slot === slot)
@@ -107,10 +103,10 @@ export default function GrillePlan({
         )}
       </div>
 
-      <div className="overflow-x-auto pb-2">
-        <div className="grid min-w-[760px] grid-cols-7 gap-2" aria-busy={dragState !== null}>
+      <div className="overflow-x-auto pb-2 -mx-4 px-4">
+        <div className="grid min-w-[720px] grid-cols-7 gap-2" aria-busy={dragState !== null}>
           {dates.map((date) => (
-            <div key={date} className="text-center text-xs font-medium text-texte-doux">
+            <div key={date} className="text-center text-xs font-medium text-texte-doux pb-1">
               {new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(
                 new Date(date)
               )}
@@ -122,13 +118,13 @@ export default function GrillePlan({
               return (
                 <div
                   key={`${date}-${slot}`}
-                  className={`min-h-28 p-2 transition ${
+                  className={`min-h-[100px] p-1.5 transition ${
                     cellEntries.length > 0 ? "carte" : "rounded-2xl border border-dashed border-[#A8E6CF] bg-white/50"
                   }`}
                 >
                   <div className="mb-1 text-[10px] uppercase tracking-wide text-[#8fb5a2]">{slotLabels[slot]}</div>
                   {cellEntries.length > 0 ? (
-                    <div className="flex flex-col gap-1 max-h-[120px] overflow-y-auto pb-1">
+                    <div className="flex flex-col gap-1.5">
                       {cellEntries.map((entry) => (
                         <CarteRepas
                           key={entry.id}
@@ -140,12 +136,21 @@ export default function GrillePlan({
                           onClickEdit={() => setFeuille({ date, slot, entry })}
                         />
                       ))}
+                      {/* Bouton + toujours visible pour ajouter un autre repas */}
+                      <button
+                        type="button"
+                        onClick={() => setFeuille({ date, slot, entry: null })}
+                        className="flex h-7 w-full items-center justify-center rounded-lg border border-dashed border-[#A8E6CF]/60 text-xs text-[#4A6741]/50 hover:bg-[#A8E6CF]/20 hover:text-[#4A6741] transition"
+                        aria-label={`Ajouter un autre repas — ${slotLabels[slot] ?? slot}`}
+                      >
+                        +
+                      </button>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setFeuille({ date, slot, entry: null })}
-                      className="flex h-16 w-full items-center justify-center rounded-xl text-xl text-[#4A6741]/40 hover:bg-[#A8E6CF]/20"
+                      className="flex h-16 w-full items-center justify-center rounded-xl text-2xl text-[#4A6741]/30 hover:bg-[#A8E6CF]/20 hover:text-[#4A6741] transition"
                       title="Ajouter un repas"
                       aria-label={`Ajouter un repas — ${slotLabels[slot] ?? slot}`}
                     >
