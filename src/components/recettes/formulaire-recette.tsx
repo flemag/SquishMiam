@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useMiamz } from "@/components/miamz/fournisseur";
 import type { CategorieVue } from "@/lib/categories";
 import { CATEGORIE_AUTRE } from "@/lib/categories";
+import AssistantRecette from "./assistant-recette";
+import type { RecetteExtraite } from "@/lib/import-recette";
 
 const UNITES = ["g", "kg", "ml", "cl", "l", "pièce", "boîte"];
 
@@ -46,6 +48,26 @@ export default function FormulaireRecette({
   const [importEnCours, setImportEnCours] = useState(false);
   const [erreurImport, setErreurImport] = useState<string | null>(null);
   const [succesImport, setSuccesImport] = useState(false);
+
+  /** Remplit le formulaire depuis une recette extraite (IA ou import URL). */
+  function remplirDepuisRecette(r: RecetteExtraite) {
+    if (r.title) setTitle(r.title);
+    if (typeof r.servings === "number") setServings(r.servings);
+    if (r.minutes) setMinutes(String(r.minutes));
+    if (Array.isArray(r.tags) && r.tags.length > 0) setTags(r.tags.join(", "));
+    if (Array.isArray(r.ingredients) && r.ingredients.length > 0) {
+      setIngredients(
+        r.ingredients.map((ing) => ({
+          nom: ing.nom,
+          quantite: ing.quantite !== undefined ? String(ing.quantite) : "",
+          unite: ing.unite && UNITES.includes(ing.unite) ? ing.unite : "g",
+        }))
+      );
+    }
+    if (Array.isArray(r.steps) && r.steps.length > 0) {
+      setSteps(r.steps.join("\n"));
+    }
+  }
 
   function ligne(index: number, champ: Partial<LigneIngredient>) {
     setIngredients((lignes) => lignes.map((l, i) => (i === index ? { ...l, ...champ } : l)));
@@ -95,23 +117,7 @@ export default function FormulaireRecette({
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.recette) {
-        const r = data.recette;
-        if (r.title) setTitle(r.title);
-        if (typeof r.servings === "number") setServings(r.servings);
-        if (r.minutes) setMinutes(String(r.minutes));
-        if (Array.isArray(r.tags) && r.tags.length > 0) setTags(r.tags.join(", "));
-        if (Array.isArray(r.ingredients) && r.ingredients.length > 0) {
-          setIngredients(
-            r.ingredients.map((ing: { nom: string; quantite?: number; unite?: string }) => ({
-              nom: ing.nom,
-              quantite: ing.quantite !== undefined ? String(ing.quantite) : "",
-              unite: ing.unite && UNITES.includes(ing.unite) ? ing.unite : "g",
-            }))
-          );
-        }
-        if (Array.isArray(r.steps) && r.steps.length > 0) {
-          setSteps(r.steps.join("\n"));
-        }
+        remplirDepuisRecette(data.recette);
         setSuccesImport(true);
         setUrlImport("");
       } else {
@@ -167,6 +173,9 @@ export default function FormulaireRecette({
   return (
     <main className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-2xl font-semibold text-miamz-vert">Nouvelle recette</h1>
+
+      {/* Assistant IA — Brouillon de recette */}
+      <AssistantRecette onBrouillon={remplirDepuisRecette} />
 
       {/* Volet Importation par URL */}
       <div className="carte mb-6 p-4">
