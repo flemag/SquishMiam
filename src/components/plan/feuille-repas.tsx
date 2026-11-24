@@ -8,7 +8,7 @@ import FeuilleModale from "@/components/ui/feuille-modale";
 import type { CategorieVue } from "@/lib/categories";
 
 export type RecetteChoix = { id: string; title: string; minutes: number | null; ingredients: unknown; categorieId: string | null };
-export type EntryVue = { id: string; date: string; slot: string; servings: number; recipeId: string; title: string };
+export type EntryVue = { id: string; date: string; slot: string; servings: number; recipeId: string; title: string; order: number };
 
 const DUREES: { label: string; valeur: number | null }[] = [
   { label: "Toutes", valeur: null },
@@ -22,10 +22,7 @@ const labelJour = (date: string) =>
 
 /**
  * Bottom sheet universelle du Plan : créer, modifier (portions, recette,
- * déplacement) ou supprimer un repas — tout au doigt. Règles du plan 2c :
- * seuls la création et la suppression émettent un événement Miamz (jamais
- * la modification), et jamais d'écrasement silencieux d'une case occupée
- * (cibles désactivées + « — occupé », 409 défensif).
+ * déplacement) ou supprimer un repas — tout au doigt.
  */
 export default function FeuilleRepas({
   cible,
@@ -61,6 +58,7 @@ export default function FeuilleRepas({
   const [service, setService] = useState(cible.slot);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
 
   const edition = entry !== null;
   const deplace = jour !== cible.date || service !== cible.slot;
@@ -110,7 +108,6 @@ export default function FeuilleRepas({
     setEnCours(true);
     setErreur(null);
     try {
-      // Uniquement les champs changés ; une modification n'émet JAMAIS d'événement.
       const data: { servings?: number; recipeId?: string; date?: string; slot?: string } = {};
       if (servings !== entry.servings) data.servings = servings;
       if (recetteChoisie !== entry.recipeId) data.recipeId = recetteChoisie;
@@ -154,6 +151,13 @@ export default function FeuilleRepas({
     }
   }
 
+  // Suggestions rapides
+  const rapides = recipes.filter((r) => r.minutes && r.minutes <= 25);
+  const nonPlanifiees = recipes.filter((r) => !recipes.some(() => false)); // placeholder
+  const suggestions = [
+    { label: "⚡ Rapides", recettes: rapides.length > 0 ? rapides : recipes.slice(0, 3) },
+  ];
+
   return (
     <FeuilleModale
       ouvert
@@ -181,6 +185,25 @@ export default function FeuilleRepas({
 
       <div className="mt-4 flex flex-col gap-3">
         <h3 className="text-sm font-semibold text-foreground">Recette</h3>
+
+        {/* Suggestions rapides */}
+        {!edition && (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {suggestions.map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => {
+                  if (s.recettes.length > 0) setRecetteChoisie(s.recettes[0].id);
+                }}
+                className="min-h-9 shrink-0 rounded-full px-3 text-xs font-medium border border-bordure bg-white text-texte-doux hover:bg-[#A8E6CF]/30"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <input
           value={requete}
           onChange={(e) => setRequete(e.target.value)}
@@ -189,67 +212,67 @@ export default function FeuilleRepas({
           className="champ w-full"
         />
 
-        {/* Rangée catégories */}
-        <div
-          role="group"
-          aria-label="Filtrer par catégorie"
-          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
-        >
+        {/* Filtres compacts */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setCategorieFiltre(null)}
-            aria-pressed={categorieFiltre === null}
-            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
-              categorieFiltre === null
-                ? "bg-[#4A6741] text-white"
-                : "border border-bordure bg-white text-texte-doux"
+            onClick={() => setFiltresOuverts((v) => !v)}
+            aria-expanded={filtresOuverts}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition ${
+              categorieFiltre !== null || dureeMax !== null
+                ? "border-[#4A6741] bg-[#4A6741] text-white"
+                : "border-bordure bg-white text-texte-doux"
             }`}
           >
-            Toutes
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
+              <path d="M3 6h18M6 12h12M9 18h6" strokeLinecap="round" />
+            </svg>
           </button>
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setCategorieFiltre(c.id)}
-              aria-pressed={categorieFiltre === c.id}
-              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
-                categorieFiltre === c.id
-                  ? "bg-[#4A6741] text-white"
-                  : "border border-bordure bg-white text-texte-doux"
-              }`}
-            >
-              {c.nom}
-            </button>
-          ))}
-        </div>
-
-        {/* Rangée durées */}
-        <div
-          role="group"
-          aria-label="Filtrer par durée"
-          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
-        >
-          {DUREES.map((d) => (
-            <button
-              key={d.label}
-              type="button"
-              onClick={() => setDureeMax(d.valeur)}
-              aria-pressed={dureeMax === d.valeur}
-              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
-                dureeMax === d.valeur
-                  ? "bg-[#4A6741] text-white"
-                  : "border border-bordure bg-white text-texte-doux"
-              }`}
-            >
-              {d.label}
-            </button>
-          ))}
+          {filtresOuverts && (
+            <div className="flex flex-1 gap-2 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setCategorieFiltre(null)}
+                aria-pressed={categorieFiltre === null}
+                className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                  categorieFiltre === null ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                Toutes
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCategorieFiltre(c.id)}
+                  aria-pressed={categorieFiltre === c.id}
+                  className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                    categorieFiltre === c.id ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                  }`}
+                >
+                  {c.nom}
+                </button>
+              ))}
+              {DUREES.map((d) => (
+                <button
+                  key={d.label}
+                  type="button"
+                  onClick={() => setDureeMax(d.valeur)}
+                  aria-pressed={dureeMax === d.valeur}
+                  className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                    dureeMax === d.valeur ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <p className="text-xs text-texte-doux">{visibles.length} recette(s)</p>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 max-h-[200px] overflow-y-auto">
           {visibles.length === 0 ? (
             <div>
               <p className="text-sm text-texte-doux">Aucune recette ne correspond.</p>
@@ -262,7 +285,7 @@ export default function FeuilleRepas({
                 }}
                 className="bouton-secondaire mt-2 min-h-11"
               >
-                Réinitialiser les filtres
+                Réinitialiser
               </button>
             </div>
           ) : (
