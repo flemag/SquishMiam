@@ -1,0 +1,28 @@
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
+import ProfilClient from "@/components/profil/profil-client";
+import { normaliserTailleFoyer, objectifDepuisValeur } from "@/lib/profil";
+
+export default async function ProfilPage() {
+  const session = await auth();
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (!userId) redirect("/connexion");
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { email: true, householdSize: true, goal: true, tokens: true },
+  });
+  if (!user) redirect("/connexion");
+
+  return (
+    <main>
+      <ProfilClient
+        householdSize={normaliserTailleFoyer(user.householdSize)}
+        goal={objectifDepuisValeur(user.goal)}
+        tokens={user.tokens}
+        email={user.email}
+      />
+    </main>
+  );
+}

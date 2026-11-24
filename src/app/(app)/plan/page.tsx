@@ -22,7 +22,7 @@ export default async function PlanPage({
   const fin = new Date(debut);
   fin.setUTCDate(fin.getUTCDate() + 7);
 
-  const [entries, recipes, categoriesTriees] = await Promise.all([
+  const [entries, recipes, categoriesTriees, profil] = await Promise.all([
     db.mealPlanEntry.findMany({
       where: { ownerId: userId, date: { gte: debut, lt: fin } },
       select: {
@@ -45,6 +45,7 @@ export default async function PlanPage({
       where: { masquee: false },
       select: { id: true, nom: true },
     }).then((cats) => cats.sort((a, b) => a.nom.localeCompare(b.nom, "fr"))),
+    db.user.findUnique({ where: { id: userId }, select: { householdSize: true } }),
   ]);
 
   const prev = new Date(debut);
@@ -101,6 +102,7 @@ export default async function PlanPage({
           }))}
           recipes={recipes}
           categories={categoriesTriees}
+          portionsDefaut={profil?.householdSize ?? 1}
         />
       )}
     </main>

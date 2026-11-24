@@ -20,6 +20,7 @@ export default function GrillePlan({
   entries,
   recipes,
   categories,
+  portionsDefaut = 1,
 }: {
   dates: string[];
   slots: Slot[];
@@ -27,6 +28,7 @@ export default function GrillePlan({
   entries: EntryVue[];
   recipes: RecetteChoix[];
   categories: CategorieVue[];
+  portionsDefaut?: number;
 }) {
   const router = useRouter();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -167,6 +169,7 @@ export default function GrillePlan({
           dates={dates}
           slots={slots}
           slotLabels={slotLabels}
+          portionsDefaut={portionsDefaut}
           onFermer={() => setFeuille(null)}
         />
       )}

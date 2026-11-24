@@ -9,6 +9,7 @@ import {
   reponseCharmeLocal,
   type ContexteCuisine,
 } from "@/lib/chat-miamz";
+import { phraseProfil } from "@/lib/profil";
 import { demanderReponseIa } from "@/lib/openrouter";
 
 // Délai global laissé à l'IA avant le repli local « Charme local ».
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
   const finSemaine = new Date(debutSemaine);
   finSemaine.setUTCDate(finSemaine.getUTCDate() + 7);
 
-  const [recipes, planEntries] = await Promise.all([
+  const [recipes, planEntries, profil] = await Promise.all([
     db.recipe.findMany({
       where: { createdById: userId },
       select: {
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
       include: { recipe: { select: { title: true } } },
       orderBy: { date: "asc" },
     }),
+    db.user.findUnique({ where: { id: userId }, select: { householdSize: true, goal: true } }),
   ]);
 
   const contexte: ContexteCuisine = {
@@ -91,6 +93,9 @@ export async function POST(req: Request) {
 
 Voici le contexte actuel de la cuisine de l'utilisateur :
 ${contexteTexte}
+
+Profil du foyer :
+${phraseProfil({ householdSize: profil?.householdSize, goal: profil?.goal })}
 
 Règles de dialogue :
 1. Privilégie les recettes de l'utilisateur si elles correspondent à sa demande.

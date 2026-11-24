@@ -10,11 +10,17 @@ const UNITES = ["g", "kg", "ml", "cl", "l", "pièce", "boîte"];
 
 type LigneIngredient = { nom: string; quantite: string; unite: string };
 
-export default function FormulaireRecette({ categories: categoriesInitiales }: { categories: CategorieVue[] }) {
+export default function FormulaireRecette({
+  categories: categoriesInitiales,
+  portionsDefaut = 1,
+}: {
+  categories: CategorieVue[];
+  portionsDefaut?: number;
+}) {
   const router = useRouter();
   const { emettre } = useMiamz();
   const [title, setTitle] = useState("");
-  const [servings, setServings] = useState(1);
+  const [servings, setServings] = useState(portionsDefaut);
   const [minutes, setMinutes] = useState("");
   const [tags, setTags] = useState("");
   const [ingredients, setIngredients] = useState<LigneIngredient[]>([

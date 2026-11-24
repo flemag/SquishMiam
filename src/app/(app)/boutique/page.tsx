@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import BoutiqueClient from "@/components/boutique/boutique-client";
+import BoutiquePageVue from "@/components/boutique/boutique-page";
 
 export default async function BoutiquePage() {
   const session = await auth();
@@ -42,7 +42,7 @@ export default async function BoutiquePage() {
 
   return (
     <main>
-      <BoutiqueClient
+      <BoutiquePageVue
         categories={categories}
         recettes={recettesWithStringDate}
       />

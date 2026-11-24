@@ -36,6 +36,7 @@ export default function FeuilleRepas({
   dates,
   slots,
   slotLabels,
+  portionsDefaut = 1,
   onFermer,
 }: {
   cible: { date: string; slot: string };
@@ -46,6 +47,7 @@ export default function FeuilleRepas({
   dates: string[];
   slots: string[];
   slotLabels: Record<string, string>;
+  portionsDefaut?: number;
   onFermer: () => void;
 }) {
   const router = useRouter();
@@ -54,7 +56,7 @@ export default function FeuilleRepas({
   const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
   const [dureeMax, setDureeMax] = useState<number | null>(null);
   const [recetteChoisie, setRecetteChoisie] = useState(entry?.recipeId ?? recipes[0]?.id ?? "");
-  const [servings, setServings] = useState(entry?.servings ?? 1);
+  const [servings, setServings] = useState(entry?.servings ?? portionsDefaut);
   const [jour, setJour] = useState(cible.date);
   const [service, setService] = useState(cible.slot);
   const [enCours, setEnCours] = useState(false);

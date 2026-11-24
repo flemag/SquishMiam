@@ -10,7 +10,9 @@ import { THEMES, THEME_DEFAUT, themeDepuisValeur, type ThemeId } from "@/lib/the
 const LIENS = [
   { href: "/plan", label: "Plan", Icone: Icalendrier },
   { href: "/recettes", label: "Recettes", Icone: Ilivre },
+  { href: "/boutique", label: "Boutique", Icone: Iboutique },
   { href: "/courses", label: "Courses", Icone: Ipanier },
+  { href: "/profil", label: "Profil", Icone: Iprofil },
 ];
 
 /* Icônes SVG inline (tracés type Lucide, MIT) — zéro dépendance. */
@@ -39,6 +41,26 @@ function Ipanier({ className }: { className?: string }) {
       <circle cx="8" cy="21" r="1" />
       <circle cx="19" cy="21" r="1" />
       <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+    </svg>
+  );
+}
+
+function Iboutique({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M3 9 4.5 4h15L21 9" />
+      <path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" />
+      <path d="M5 12v8h14v-8" />
+      <path d="M9 20v-5h6v5" />
+    </svg>
+  );
+}
+
+function Iprofil({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" />
     </svg>
   );
 }
@@ -232,7 +254,7 @@ export default function NavBar({ estAdmin }: { estAdmin: boolean }) {
         aria-label="Navigation principale"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-bordure bg-fond-voile pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
       >
-        <div className="mx-auto grid max-w-5xl grid-cols-3">
+        <div className="mx-auto grid max-w-5xl grid-cols-5">
           {LIENS.map((lien) => {
             const actif = pathname.startsWith(lien.href);
             return (
