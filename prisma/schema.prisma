@@ -22,6 +22,7 @@ model User {
   accounts            Account[]
   sessions            Session[]
   tokens              Int       @default(0)
+  xp                  Int       @default(0)
   householdSize       Int       @default(1) // portions par défaut (taille du foyer)
   goal                String    @default("equilibre") // objectif nutritionnel
   validatedRecipes    String[]  // recipe IDs validées
