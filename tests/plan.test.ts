@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getWeekDates, prochainsJours, weekStart } from "@/lib/plan";
+import { getWeekDates, prochainsJours, weekStart, formatDateLocaleIso } from "@/lib/plan";
 
 describe("getWeekDates", () => {
   it("renvoie lundi → dimanche quel que soit le jour fourni", () => {
@@ -40,5 +40,12 @@ describe("prochainsJours", () => {
       "2027-01-01",
       "2027-01-02",
     ]);
+  });
+});
+
+describe("formatDateLocaleIso", () => {
+  it("suit le calendrier local, même juste après minuit", () => {
+    expect(formatDateLocaleIso(new Date(2026, 10, 24, 0, 30))).toBe("2026-11-24");
+    expect(formatDateLocaleIso(new Date(2027, 0, 1, 23, 59))).toBe("2027-01-01");
   });
 });

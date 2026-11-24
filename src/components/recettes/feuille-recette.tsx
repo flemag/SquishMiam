@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import FeuilleModale from "@/components/ui/feuille-modale";
 import { useMiamz } from "@/components/miamz/fournisseur";
-import { formatDateIso, prochainsJours, SLOTS, SLOT_LABELS, type Slot } from "@/lib/plan";
+import { formatDateIso, formatDateLocaleIso, prochainsJours, SLOTS, SLOT_LABELS, type Slot } from "@/lib/plan";
 
 export type RecetteFiche = {
   id: string;
@@ -63,8 +63,10 @@ export default function FeuilleRecette({
   const [erreur, setErreur] = useState(false);
 
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
-  const [jours] = useState(() => prochainsJours(new Date()).map(formatDateIso));
-  const [jour, setJour] = useState(() => formatDateIso(new Date()));
+  const [jours] = useState(() =>
+    prochainsJours(new Date(`${formatDateLocaleIso(new Date())}T00:00:00Z`)).map(formatDateIso)
+  );
+  const [jour, setJour] = useState(() => jours[0]);
   const [service, setService] = useState<Slot>("DEJEUNER");
   const [portions, setPortions] = useState(1);
   const [enCoursAjout, setEnCoursAjout] = useState(false);

@@ -50,6 +50,16 @@ export function formatDateIso(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Date ISO du calendrier LOCAL (pas UTC) : « aujourd'hui » côté utilisateur.
+ * À 00 h 30 à Paris, toISOString() renvoie encore la veille.
+ */
+export function formatDateLocaleIso(d: Date): string {
+  const mois = String(d.getMonth() + 1).padStart(2, "0");
+  const jour = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mois}-${jour}`;
+}
+
 export function formatJourFr(d: Date): string {
   return new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", timeZone: "UTC" }).format(d);
 }
