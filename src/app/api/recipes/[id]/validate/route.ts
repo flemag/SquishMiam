@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { exigerAuteur } from "@/lib/recipes";
-import { peutValider, calculerJetonsApresValidation } from "@/lib/boutique";
+import { calculerJetonsApresValidation, estValidee } from "@/lib/boutique";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -36,34 +35,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Transaction : validation + jetons
   const result = await db.$transaction(async (tx) => {
-    // Ajouter le validateur et incrémenter
+    // Badge posé une seule fois, au franchissement du seuil.
+    const devientValidee = !estValidee(recipe.validationCount) && estValidee(recipe.validationCount + 1);
     const updated = await tx.recipe.update({
       where: { id },
       data: {
         validators: { push: userId },
         validationCount: { increment: 1 },
-        // Si 3ème validation, marquer comme validée
-        ...(recipe.validationCount + 1 >= 3 ? { validatedAt: new Date() } : {}),
+        ...(devientValidee ? { validatedAt: new Date() } : {}),
       },
       select: { validationCount: true, validatedAt: true },
     });
 
-    // Jetons pour le validateur
+    // Jetons pour le validateur (plafonnés)
     const user = await tx.user.findUnique({
       where: { id: userId },
       select: { tokens: true },
     });
 
-    let newTokens = user?.tokens ?? 0;
-    let tokenGained = false;
+    const jetonsAvant = user?.tokens ?? 0;
+    const newTokens = calculerJetonsApresValidation(jetonsAvant);
+    const tokenGained = newTokens > jetonsAvant;
 
-    if ((user?.tokens ?? 0) < 10) {
-      newTokens = user!.tokens + 1;
-      await tx.user.update({
-        where: { id: userId },
-        data: { tokens: newTokens },
-      });
-      tokenGained = true;
+    if (tokenGained) {
+      await tx.user.update({ where: { id: userId }, data: { tokens: newTokens } });
 
       // Enregistrer la transaction
       await tx.tokenTransaction.create({

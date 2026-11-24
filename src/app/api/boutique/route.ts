@@ -1,11 +1,7 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
-  const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id;
-
   const { searchParams } = new URL(req.url);
   const categorieId = searchParams.get("categorieId") || undefined;
   const search = searchParams.get("search") || undefined;
