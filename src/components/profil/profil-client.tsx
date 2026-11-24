@@ -18,18 +18,30 @@ export default function ProfilClient({
   tokens,
   email,
   xp = 0,
+  articlesAchetes = [],
+  activeTheme: initialTheme = null,
+  activeAccessory: initialAccessory = null,
 }: {
   householdSize: number;
   goal: Objectif;
   tokens: number;
   email: string | null;
   xp?: number;
+  articlesAchetes?: { id: string; type: string; nom: string; metadata: unknown }[];
+  activeTheme?: string | null;
+  activeAccessory?: string | null;
 }) {
   const [taille, setTaille] = useState(initialTaille);
   const [goal, setGoal] = useState<Objectif>(initialGoal);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
+  const [activeTheme, setActiveTheme] = useState<string | null>(initialTheme);
+  const [activeAccessory, setActiveAccessory] = useState<string | null>(initialAccessory);
+  const [themeEnCours, setThemeEnCours] = useState(false);
+
+  const themesAchetes = articlesAchetes.filter((a) => a.type === "theme");
+  const accessoiresAchetes = articlesAchetes.filter((a) => a.type === "accessoire");
 
   const modifie = taille !== initialTaille || goal !== initialGoal;
 
@@ -127,6 +139,114 @@ export default function ProfilClient({
       </section>
 
       <Jardin xp={xp} />
+
+      {themesAchetes.length > 0 && (
+        <section className="carte p-4">
+          <h2 className="text-base font-semibold text-foreground">Mon thème</h2>
+          <p className="mt-1 text-sm text-texte-doux">Choisis un thème acheté dans la boutique.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                setThemeEnCours(true);
+                try {
+                  const res = await fetch("/api/profil/theme", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ theme: "" }),
+                  });
+                  if (res.ok) setActiveTheme(null);
+                } catch { /* ignore */ }
+                setThemeEnCours(false);
+              }}
+              disabled={themeEnCours}
+              className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
+                activeTheme === null ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+              }`}
+            >
+              Défaut
+            </button>
+            {themesAchetes.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={async () => {
+                  setThemeEnCours(true);
+                  try {
+                    const res = await fetch("/api/profil/theme", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ theme: t.id }),
+                    });
+                    if (res.ok) setActiveTheme(t.id);
+                  } catch { /* ignore */ }
+                  setThemeEnCours(false);
+                }}
+                disabled={themeEnCours}
+                className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
+                  activeTheme === t.id ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                {t.nom}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {accessoiresAchetes.length > 0 && (
+        <section className="carte p-4">
+          <h2 className="text-base font-semibold text-foreground">Mon accessoire Miamz</h2>
+          <p className="mt-1 text-sm text-texte-doux">Choisis un accessoire pour Miamz.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                setThemeEnCours(true);
+                try {
+                  const res = await fetch("/api/profil/theme", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ accessoire: "" }),
+                  });
+                  if (res.ok) setActiveAccessory(null);
+                } catch { /* ignore */ }
+                setThemeEnCours(false);
+              }}
+              disabled={themeEnCours}
+              className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
+                activeAccessory === null ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+              }`}
+            >
+              Aucun
+            </button>
+            {accessoiresAchetes.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={async () => {
+                  setThemeEnCours(true);
+                  try {
+                    const res = await fetch("/api/profil/theme", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ accessoire: a.id }),
+                    });
+                    if (res.ok) setActiveAccessory(a.id);
+                  } catch { /* ignore */ }
+                  setThemeEnCours(false);
+                }}
+                disabled={themeEnCours}
+                className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
+                  activeAccessory === a.id ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                {a.nom}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {erreur && (
         <p role="status" aria-live="polite" className="text-sm text-danger">

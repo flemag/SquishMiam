@@ -11,9 +11,13 @@ export default async function ProfilPage() {
 
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { email: true, householdSize: true, goal: true, tokens: true, xp: true },
+    select: { email: true, householdSize: true, goal: true, tokens: true, xp: true, purchasedItems: true, activeTheme: true, activeAccessory: true },
   });
   if (!user) redirect("/connexion");
+
+  const articlesAchetes = user.purchasedItems.length > 0
+    ? await db.boutiqueItem.findMany({ where: { id: { in: user.purchasedItems } } })
+    : [];
 
   return (
     <main>
@@ -23,6 +27,9 @@ export default async function ProfilPage() {
         tokens={user.tokens}
         email={user.email}
         xp={user.xp}
+        articlesAchetes={articlesAchetes.map((a) => ({ id: a.id, type: a.type, nom: a.nom, metadata: a.metadata }))}
+        activeTheme={user.activeTheme}
+        activeAccessory={user.activeAccessory}
       />
     </main>
   );
