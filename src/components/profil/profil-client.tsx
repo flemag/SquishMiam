@@ -10,17 +10,20 @@ import {
   type Objectif,
 } from "@/lib/profil";
 import { messageErreur } from "@/lib/erreur-api";
+import Jardin from "./jardin";
 
 export default function ProfilClient({
   householdSize: initialTaille,
   goal: initialGoal,
   tokens,
   email,
+  xp = 0,
 }: {
   householdSize: number;
   goal: Objectif;
   tokens: number;
   email: string | null;
+  xp?: number;
 }) {
   const [taille, setTaille] = useState(initialTaille);
   const [goal, setGoal] = useState<Objectif>(initialGoal);
@@ -122,6 +125,8 @@ export default function ProfilClient({
           validant les recettes de la communauté.
         </p>
       </section>
+
+      <Jardin xp={xp} />
 
       {erreur && (
         <p role="status" aria-live="polite" className="text-sm text-danger">

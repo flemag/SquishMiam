@@ -11,7 +11,7 @@ export default async function ProfilPage() {
 
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { email: true, householdSize: true, goal: true, tokens: true },
+    select: { email: true, householdSize: true, goal: true, tokens: true, xp: true },
   });
   if (!user) redirect("/connexion");
 
@@ -22,6 +22,7 @@ export default async function ProfilPage() {
         goal={objectifDepuisValeur(user.goal)}
         tokens={user.tokens}
         email={user.email}
+        xp={user.xp}
       />
     </main>
   );
