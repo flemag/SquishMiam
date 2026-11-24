@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { RAYONS } from "@/lib/rayons";
 import { synchroniserCourses } from "@/lib/sync-courses";
+import { ajouterXp } from "@/lib/xp";
+import { xpPourAction } from "@/lib/jardin";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
@@ -129,6 +131,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ item: updated });
     }
     const updated = await db.groceryListItem.update({ where: { id }, data });
+    // XP : cocher un article de courses
+    if (body.checked === true) {
+      await ajouterXp(userId, xpPourAction("course_cochee"), "course_cochee").catch(() => {});
+    }
     return NextResponse.json({ item: updated });
   } catch (err) {
     // Filet de sécurité : l'index unique peut encore refuser une ligne créée entre-temps.

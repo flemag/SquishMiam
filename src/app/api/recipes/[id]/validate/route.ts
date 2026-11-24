@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { calculerJetonsApresValidation, estValidee } from "@/lib/boutique";
+import { ajouterXp } from "@/lib/xp";
+import { xpPourAction } from "@/lib/jardin";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -73,6 +75,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     return { validationCount: updated.validationCount, validatedAt: updated.validatedAt, newTokens, tokenGained };
   });
+
+  // XP : valider une recette boutique
+  await ajouterXp(userId, xpPourAction("recette_validee"), "recette_validee").catch(() => {});
 
   return NextResponse.json({
     validationCount: result.validationCount,

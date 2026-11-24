@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { CATEGORIE_AUTRE } from "@/lib/categories";
 import { db } from "@/lib/db";
 import { recipeInput } from "@/lib/recipes-schema";
+import { ajouterXp } from "@/lib/xp";
+import { xpPourAction } from "@/lib/jardin";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -34,5 +36,8 @@ export async function POST(req: Request) {
   const recipe = await db.recipe.create({
     data: { ...parsed.data, categorieId, createdById: userId },
   });
+
+  await ajouterXp(userId, xpPourAction("recette_ajoutee"), "recette_ajoutee").catch(() => {});
+
   return NextResponse.json({ recipe }, { status: 201 });
 }

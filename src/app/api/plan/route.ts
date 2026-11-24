@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { SLOTS, type Slot } from "@/lib/plan";
 import { synchroniserCourses } from "@/lib/sync-courses";
+import { ajouterXp } from "@/lib/xp";
+import { xpPourAction } from "@/lib/jardin";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -77,5 +79,9 @@ export async function POST(req: Request) {
     await synchroniserCourses(tx, userId, [created.date]);
     return created;
   });
+
+  // XP : planifier un repas
+  await ajouterXp(userId, xpPourAction("repas_planifie"), "repas_planifie").catch(() => {});
+
   return NextResponse.json({ entry }, { status: 201 });
 }
