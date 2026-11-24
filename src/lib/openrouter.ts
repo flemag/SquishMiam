@@ -114,7 +114,7 @@ Format JSON attendu :
 }
 
 Règles :
-- "servings" doit être un entier entre 1 et 12 (défaut: 2).
+- "servings" doit être un entier entre 1 et 12 (défaut: 1).
 - "minutes" doit être un nombre entier représentant le temps total en minutes (optionnel).
 - "ingredients" : chaque élément DOIT avoir au moins "nom". "quantite" est un nombre positif si précisé. "unite" est une unité (g, kg, ml, cl, l, pièce, boîte, c. à soupe, c. à café...).
 - "steps" : liste ordonnée des étapes de préparation sous forme de chaînes de caractères.
@@ -150,7 +150,7 @@ Règles :
 
     return {
       title: String(parsed.title).trim(),
-      servings: typeof parsed.servings === "number" ? Math.min(12, Math.max(1, Math.round(parsed.servings))) : 2,
+      servings: typeof parsed.servings === "number" ? Math.min(12, Math.max(1, Math.round(parsed.servings))) : 1,
       minutes: typeof parsed.minutes === "number" && parsed.minutes > 0 ? Math.round(parsed.minutes) : undefined,
       tags: Array.isArray(parsed.tags) ? parsed.tags.map((t: unknown) => String(t).trim()).filter(Boolean) : [],
       ingredients: (parsed.ingredients as Array<{ nom?: unknown; quantite?: unknown; unite?: unknown }>)

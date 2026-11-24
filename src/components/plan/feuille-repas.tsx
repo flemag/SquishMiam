@@ -54,7 +54,7 @@ export default function FeuilleRepas({
   const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
   const [dureeMax, setDureeMax] = useState<number | null>(null);
   const [recetteChoisie, setRecetteChoisie] = useState(entry?.recipeId ?? recipes[0]?.id ?? "");
-  const [servings, setServings] = useState(entry?.servings ?? 2);
+  const [servings, setServings] = useState(entry?.servings ?? 1);
   const [jour, setJour] = useState(cible.date);
   const [service, setService] = useState(cible.slot);
   const [enCours, setEnCours] = useState(false);

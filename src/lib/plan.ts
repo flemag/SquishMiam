@@ -31,6 +31,21 @@ export const SLOT_LABELS: Record<Slot, string> = {
   DINER: "Dîner",
 };
 
+/**
+ * Les `nb` prochains jours à partir de `depuis` (inclus), en UTC.
+ * Sert au choix rapide de date (« aujourd'hui + 6 jours »).
+ */
+export function prochainsJours(depuis: Date, nb = 7): Date[] {
+  const base = new Date(Date.UTC(depuis.getUTCFullYear(), depuis.getUTCMonth(), depuis.getUTCDate()));
+  const jours: Date[] = [];
+  for (let i = 0; i < nb; i++) {
+    const d = new Date(base);
+    d.setUTCDate(d.getUTCDate() + i);
+    jours.push(d);
+  }
+  return jours;
+}
+
 export function formatDateIso(d: Date): string {
   return d.toISOString().slice(0, 10);
 }

@@ -35,11 +35,11 @@ describe("parseServings", () => {
     expect(parseServings("8 parts")).toBe(8);
   });
 
-  it("borne entre 1 et 12 avec défaut à 2", () => {
-    expect(parseServings("0")).toBe(2);
+  it("borne entre 1 et 12 avec défaut à 1", () => {
+    expect(parseServings("0")).toBe(1);
     expect(parseServings("50")).toBe(12);
-    expect(parseServings("invalide")).toBe(2);
-    expect(parseServings(undefined)).toBe(2);
+    expect(parseServings("invalide")).toBe(1);
+    expect(parseServings(undefined)).toBe(1);
   });
 });
 

@@ -14,7 +14,7 @@ export default function FormulaireRecette({ categories: categoriesInitiales }: {
   const router = useRouter();
   const { emettre } = useMiamz();
   const [title, setTitle] = useState("");
-  const [servings, setServings] = useState(2);
+  const [servings, setServings] = useState(1);
   const [minutes, setMinutes] = useState("");
   const [tags, setTags] = useState("");
   const [ingredients, setIngredients] = useState<LigneIngredient[]>([

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import FeuilleModale from "@/components/ui/feuille-modale";
+import { useMiamz } from "@/components/miamz/fournisseur";
+import { formatDateIso, prochainsJours, SLOTS, SLOT_LABELS, type Slot } from "@/lib/plan";
 
 export type RecetteFiche = {
   id: string;
@@ -37,11 +39,16 @@ function formaterIngredient(i: unknown): string {
   return "";
 }
 
+const labelJour = (date: string) =>
+  new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" }).format(
+    new Date(date)
+  );
+
 /**
  * Fiche recette en bottom sheet : méta, tags, ingrédients formatés, étapes,
- * et la suppression dans le footer (plus de bouton sur la carte). Ne emit
- * aucun événement Miamz (règle du ledger 2a : la suppression d'une recette
- * n'est pas un événement repas).
+ * ajout rapide au planning et suppression dans le footer. Ne emit aucun
+ * événement Miamz à la suppression (règle du ledger 2a) ; l'ajout au planning
+ * émet « repas-planifie » comme la grille.
  */
 export default function FeuilleRecette({
   recette,
@@ -51,8 +58,18 @@ export default function FeuilleRecette({
   onFermer: () => void;
 }) {
   const router = useRouter();
+  const { emettre } = useMiamz();
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState(false);
+
+  const [ajoutOuvert, setAjoutOuvert] = useState(false);
+  const [jours] = useState(() => prochainsJours(new Date()).map(formatDateIso));
+  const [jour, setJour] = useState(() => formatDateIso(new Date()));
+  const [service, setService] = useState<Slot>("DEJEUNER");
+  const [portions, setPortions] = useState(1);
+  const [enCoursAjout, setEnCoursAjout] = useState(false);
+  const [erreurAjout, setErreurAjout] = useState<string | null>(null);
+  const [succesAjout, setSuccesAjout] = useState<string | null>(null);
 
   async function supprimer() {
     if (!recette) return;
@@ -71,6 +88,41 @@ export default function FeuilleRecette({
     }
   }
 
+  async function ajouterAuPlanning() {
+    if (!recette) return;
+    setEnCoursAjout(true);
+    setErreurAjout(null);
+    setSuccesAjout(null);
+    try {
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: jour,
+          slot: service,
+          recipeId: recette.id,
+          servings: portions,
+        }),
+      });
+      if (res.ok) {
+        emettre("repas-planifie");
+        setSuccesAjout(`Ajouté au planning : ${labelJour(jour)} · ${SLOT_LABELS[service]}`);
+        setAjoutOuvert(false);
+        router.refresh();
+      } else if (res.status === 409) {
+        setErreurAjout("Ce créneau est déjà occupé — choisis un autre jour ou service.");
+      } else if (res.status === 404) {
+        setErreurAjout("Ajoute d'abord cette recette à tes recettes pour la planifier.");
+      } else {
+        setErreurAjout("Ajout impossible — réessaie.");
+      }
+    } catch {
+      setErreurAjout("Ajout impossible — réessaie.");
+    } finally {
+      setEnCoursAjout(false);
+    }
+  }
+
   if (!recette) return null;
 
   const ingredients = (Array.isArray(recette.ingredients) ? recette.ingredients : [])
@@ -86,9 +138,23 @@ export default function FeuilleRecette({
       onFermer={onFermer}
       titre={recette.title}
       footer={
-        <button type="button" onClick={supprimer} disabled={enCours} className="bouton-danger min-h-11 w-full">
-          {enCours ? "Suppression…" : "Supprimer la recette"}
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setErreurAjout(null);
+              setSuccesAjout(null);
+              setAjoutOuvert((v) => !v);
+            }}
+            aria-expanded={ajoutOuvert}
+            className="bouton min-h-11 w-full"
+          >
+            Ajouter au planning
+          </button>
+          <button type="button" onClick={supprimer} disabled={enCours} className="bouton-danger min-h-11 w-full">
+            {enCours ? "Suppression…" : "Supprimer la recette"}
+          </button>
+        </div>
       }
     >
       <p className="text-sm text-texte-doux">
@@ -96,6 +162,79 @@ export default function FeuilleRecette({
         {recette.minutes ? ` · ${recette.minutes} min` : ""}
       </p>
       {erreur && <p className="mt-2 text-sm text-danger">Suppression impossible — réessaie.</p>}
+      {succesAjout && (
+        <p role="status" aria-live="polite" className="mt-2 text-sm font-medium text-[#4A6741]">
+          {succesAjout}
+        </p>
+      )}
+
+      {ajoutOuvert && (
+        <div className="mt-3 rounded-2xl border border-[#A8E6CF] bg-[#A8E6CF]/10 p-3">
+          <h3 className="text-sm font-semibold text-foreground">Ajouter au planning</h3>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <select
+              value={jour}
+              onChange={(e) => setJour(e.target.value)}
+              aria-label="Jour"
+              className="champ min-h-11 min-w-0 flex-1"
+            >
+              {jours.map((d) => (
+                <option key={d} value={d}>
+                  {labelJour(d)}
+                </option>
+              ))}
+            </select>
+            <select
+              value={service}
+              onChange={(e) => setService(e.target.value as Slot)}
+              aria-label="Service"
+              className="champ min-h-11 min-w-0 flex-1"
+            >
+              {SLOTS.map((s) => (
+                <option key={s} value={s}>
+                  {SLOT_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm text-texte-doux">Portions</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPortions((p) => Math.max(1, p - 1))}
+                disabled={portions <= 1 || enCoursAjout}
+                aria-label="Moins de portions"
+                className="bouton-secondaire h-11 w-11 px-0"
+              >
+                −
+              </button>
+              <span className="min-w-6 text-center font-semibold">{portions}</span>
+              <button
+                type="button"
+                onClick={() => setPortions((p) => Math.min(12, p + 1))}
+                disabled={portions >= 12 || enCoursAjout}
+                aria-label="Plus de portions"
+                className="bouton-secondaire h-11 w-11 px-0"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {erreurAjout && <p className="mt-2 text-sm text-danger">{erreurAjout}</p>}
+
+          <button
+            type="button"
+            onClick={ajouterAuPlanning}
+            disabled={enCoursAjout}
+            className="bouton mt-2 min-h-11 w-full"
+          >
+            {enCoursAjout ? "Ajout…" : `Ajouter ${labelJour(jour)}`}
+          </button>
+        </div>
+      )}
 
       {recette.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">

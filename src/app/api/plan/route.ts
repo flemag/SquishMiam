@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const date = typeof body.date === "string" ? body.date : "";
   const slot = body.slot as Slot;
   const recipeId = typeof body.recipeId === "string" ? body.recipeId : "";
-  const servings = Number(body.servings ?? 2);
+  const servings = Number(body.servings ?? 1);
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(SLOTS as readonly string[]).includes(slot) || !recipeId) {
     return NextResponse.json({ error: "Paramètres invalides" }, { status: 400 });

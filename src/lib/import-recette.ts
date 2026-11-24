@@ -50,21 +50,21 @@ export function parseDureeIso(valeur: string): number | null {
   return null;
 }
 
-/** Extrait et valide un nombre de portions (1 à 12, défaut 2). */
+/** Extrait et valide un nombre de portions (1 à 12, défaut 1). */
 export function parseServings(valeur: unknown): number {
   if (typeof valeur === "number" && !isNaN(valeur)) {
-    if (valeur <= 0) return 2;
+    if (valeur <= 0) return 1;
     return Math.min(12, Math.max(1, Math.round(valeur)));
   }
   if (typeof valeur === "string") {
     const match = valeur.match(/\d+/);
     if (match) {
       const n = parseInt(match[0], 10);
-      if (n <= 0) return 2;
+      if (n <= 0) return 1;
       return Math.min(12, Math.max(1, n));
     }
   }
-  return 2;
+  return 1;
 }
 
 /** Découpe une ligne d'ingrédient brute ("250 g de farine", "3 oeufs") en nom, quantité et unité. */
