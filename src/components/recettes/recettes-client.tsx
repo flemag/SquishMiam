@@ -18,10 +18,16 @@ export type RecetteVue = RecetteFiche;
 type VueRechercheable = RecetteVue & RecetteRecherchable;
 
 const DUREES: { label: string; valeur: number | null }[] = [
-  { label: "Toutes", valeur: null },
+  { label: "Toutes durées", valeur: null },
   { label: "≤ 20 min", valeur: 20 },
   { label: "≤ 30 min", valeur: 30 },
   { label: "≤ 45 min", valeur: 45 },
+];
+
+const TRIS: { label: string; valeur: Tri }[] = [
+  { label: "Récent", valeur: "recent" },
+  { label: "A → Z", valeur: "alpha" },
+  { label: "Durée", valeur: "duree" },
 ];
 
 /**
@@ -47,6 +53,7 @@ export default function RecettesClient({
   const [dureeMax, setDureeMax] = useState<number | null>(null);
   const [tri, setTri] = useState<Tri>("recent");
   const [recetteOuverte, setRecetteOuverte] = useState<RecetteVue | null>(null);
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
 
   // Lien direct depuis Miamz : /recettes?recette=<id> ouvre la fiche demandée.
   useEffect(() => {
@@ -57,7 +64,6 @@ export default function RecettesClient({
 
   function fermerRecette() {
     setRecetteOuverte(null);
-    // Nettoie l'URL pour qu'un nouveau clic sur le même lien rouvre la fiche.
     if (recetteInitialeId) router.replace("/recettes");
   }
 
@@ -105,119 +111,167 @@ export default function RecettesClient({
     setTri("recent");
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="sticky top-[4.25rem] z-10 -mx-4 bg-fond-voile px-4 py-2 backdrop-blur">
-        <input
-          value={requete}
-          onChange={(e) => setRequete(e.target.value)}
-          type="search"
-          placeholder="Rechercher un titre ou un ingrédient…"
-          aria-label="Rechercher un titre ou un ingrédient"
-          className="champ w-full rounded-full"
-        />
-      </div>
+  const filtresActifs =
+    categorieFiltre !== null || tagsChoisis.length > 0 || dureeMax !== null || tri !== "recent";
 
-      {/* Rangée catégories */}
-      <div
-        role="group"
-        aria-label="Filtrer par catégorie"
-        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
-      >
-        <button
-          type="button"
-          onClick={() => setCategorieFiltre(null)}
-          aria-pressed={categorieFiltre === null}
-          className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
-            categorieFiltre === null
-              ? "bg-[#4A6741] text-white"
-              : "border border-bordure bg-white text-texte-doux"
-          }`}
-        >
-          Toutes
-        </button>
-        {categories.map((c) => (
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Barre de recherche sticky */}
+      <div className="sticky top-[4.25rem] z-10 -mx-4 bg-fond-voile px-4 py-2 backdrop-blur">
+        <div className="flex items-center gap-2">
+          <input
+            value={requete}
+            onChange={(e) => setRequete(e.target.value)}
+            type="search"
+            placeholder="Rechercher un titre ou un ingrédient…"
+            aria-label="Rechercher un titre ou un ingrédient"
+            className="champ w-full rounded-full"
+          />
           <button
-            key={c.id}
             type="button"
-            onClick={() => setCategorieFiltre(c.id)}
-            aria-pressed={categorieFiltre === c.id}
-            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition ${
-              categorieFiltre === c.id
-                ? "bg-[#4A6741] text-white"
-                : "border border-bordure bg-white text-texte-doux"
+            onClick={() => setFiltresOuverts((v) => !v)}
+            aria-expanded={filtresOuverts}
+            aria-label="Filtres"
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition ${
+              filtresActifs
+                ? "border-[#4A6741] bg-[#4A6741] text-white"
+                : "border-bordure bg-white text-texte-doux"
             }`}
           >
-            {c.nom}
-          </button>
-        ))}
-      </div>
-
-      {tagsTous.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {tagsTous.map((t) => {
-            const count = tagCounts.get(t) || 0;
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => basculeTag(t)}
-                aria-pressed={tagsChoisis.includes(t)}
-                title={`${count} recette${count > 1 ? "s" : ""}`}
-                className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
-                  tagsChoisis.includes(t)
-                    ? "bg-[#4A6741] text-white"
-                    : "border border-bordure bg-white text-texte-doux"
-                }`}
-              >
-                {t}
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => setAfficherRares((v) => !v)}
-            aria-pressed={afficherRares}
-            className="min-h-9 rounded-full px-3 text-sm font-medium transition border border-bordure bg-white text-texte-doux hover:bg-[#A8E6CF]/30"
-            title={afficherRares ? "Masquer les tags rares (1 recette)" : "Afficher les tags rares (1 recette)"}
-          >
-            {afficherRares ? "Masquer rares" : "Voir rares"}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true">
+              <path d="M3 6h18M6 12h12M9 18h6" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
-      )}
+      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-2">
-          {DUREES.map((d) => (
+      {/* Panneau de filtres (repliable) */}
+      {filtresOuverts && (
+        <div className="carte flex flex-col gap-3 p-4">
+          {/* Catégories — scroll horizontal */}
+          <div
+            role="group"
+            aria-label="Filtrer par catégorie"
+            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+          >
             <button
-              key={d.label}
               type="button"
-              onClick={() => setDureeMax(d.valeur)}
-              aria-pressed={dureeMax === d.valeur}
-              className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
-                dureeMax === d.valeur
+              onClick={() => setCategorieFiltre(null)}
+              aria-pressed={categorieFiltre === null}
+              className={`min-h-9 shrink-0 rounded-full px-4 text-sm font-medium transition ${
+                categorieFiltre === null
                   ? "bg-[#4A6741] text-white"
                   : "border border-bordure bg-white text-texte-doux"
               }`}
             >
-              {d.label}
+              Toutes
             </button>
-          ))}
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCategorieFiltre(c.id)}
+                aria-pressed={categorieFiltre === c.id}
+                className={`min-h-9 shrink-0 rounded-full px-4 text-sm font-medium transition ${
+                  categorieFiltre === c.id
+                    ? "bg-[#4A6741] text-white"
+                    : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                {c.nom}
+              </button>
+            ))}
+          </div>
+
+          {/* Durées — chips */}
+          <div className="flex flex-wrap gap-2">
+            {DUREES.map((d) => (
+              <button
+                key={d.label}
+                type="button"
+                onClick={() => setDureeMax(d.valeur)}
+                aria-pressed={dureeMax === d.valeur}
+                className={`min-h-9 rounded-full px-3 text-sm font-medium transition ${
+                  dureeMax === d.valeur
+                    ? "bg-[#4A6741] text-white"
+                    : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tags — scroll horizontal */}
+          {tagsTous.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {tagsTous.map((t) => {
+                const count = tagCounts.get(t) || 0;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => basculeTag(t)}
+                    aria-pressed={tagsChoisis.includes(t)}
+                    title={`${count} recette${count > 1 ? "s" : ""}`}
+                    className={`min-h-9 shrink-0 rounded-full px-3 text-sm font-medium transition ${
+                      tagsChoisis.includes(t)
+                        ? "bg-[#4A6741] text-white"
+                        : "border border-bordure bg-white text-texte-doux"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setAfficherRares((v) => !v)}
+                aria-pressed={afficherRares}
+                className="min-h-9 shrink-0 rounded-full px-3 text-sm font-medium transition border border-bordure bg-white text-texte-doux hover:bg-[#A8E6CF]/30"
+              >
+                {afficherRares ? "Masquer rares" : "Voir rares"}
+              </button>
+            </div>
+          )}
+
+          {/* Tri */}
+          <div className="flex gap-2">
+            {TRIS.map((t) => (
+              <button
+                key={t.valeur}
+                type="button"
+                onClick={() => setTri(t.valeur)}
+                aria-pressed={tri === t.valeur}
+                className={`min-h-9 flex-1 rounded-full px-3 text-sm font-medium transition ${
+                  tri === t.valeur
+                    ? "bg-[#4A6741] text-white"
+                    : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {filtresActifs && (
+            <button
+              type="button"
+              onClick={reinitialiser}
+              className="bouton-secondaire min-h-9 self-start px-3 text-xs"
+            >
+              Réinitialiser les filtres
+            </button>
+          )}
         </div>
-        <select
-          value={tri}
-          onChange={(e) => setTri(e.target.value as Tri)}
-          aria-label="Trier les recettes"
-          className="champ min-h-9 px-2 text-sm"
-        >
-          <option value="recent">Récent</option>
-          <option value="alpha">A → Z</option>
-          <option value="duree">Durée</option>
-        </select>
-      </div>
+      )}
 
-      <p className="text-sm text-texte-doux">{visibles.length} recette(s) trouvée(s)</p>
+      {/* Compteur */}
+      <p className="text-sm text-texte-doux">
+        {visibles.length} recette{visibles.length > 1 ? "s" : ""} trouvée{visibles.length > 1 ? "s" : ""}
+      </p>
 
+      {/* Grille — 1 colonne mobile, 2 tablette, 3 desktop */}
       {visibles.length === 0 ? (
         <div className="carte p-10 text-center">
           <div className="text-4xl">🔍</div>
@@ -227,7 +281,7 @@ export default function RecettesClient({
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {visibles.map((r) => (
             <RecetteCard key={r.id} recette={r} onOuvrir={() => setRecetteOuverte(r)} currentUserId={currentUserId} />
           ))}
