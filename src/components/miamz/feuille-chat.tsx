@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import FeuilleModale from "@/components/ui/feuille-modale";
+import FormulaireAjoutPlanning from "@/components/plan/ajout-planning";
 import MiamzSvg from "./svg";
 import { animationPourHumeur, BOUCHES } from "./visuels";
 import type { HumeurId } from "@/lib/humeurs";
@@ -43,6 +44,7 @@ export default function FeuilleChatMiamz({
   const [saisie, setSaisie] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [humeurMiamz, setHumeurMiamz] = useState<HumeurId>(humeurInitiale);
+  const [planif, setPlanif] = useState<{ recetteId: string; titre: string } | null>(null);
   const finMessagesRef = useRef<HTMLDivElement>(null);
   const envoiEnCoursRef = useRef(false);
   const compteurRef = useRef(0);
@@ -133,11 +135,12 @@ export default function FeuilleChatMiamz({
   }
 
   return (
-    <FeuilleModale
-      ouvert={ouvert}
-      onFermer={onFermer}
-      titre="Discuter avec Miamz"
-    >
+    <>
+      <FeuilleModale
+        ouvert={ouvert}
+        onFermer={onFermer}
+        titre="Discuter avec Miamz"
+      >
       <div className="flex h-[60dvh] flex-col">
         {/* En-tête Miamz animé */}
         <div className="mb-3 flex items-center gap-3 rounded-2xl bg-[#A8E6CF]/20 p-3">
@@ -178,16 +181,30 @@ export default function FeuilleChatMiamz({
               {/* Actions interactives */}
               {m.actions && m.actions.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {m.actions.map((act, i) => (
-                    <Link
-                      key={i}
-                      href={act.lien}
-                      onClick={onFermer}
-                      className="bouton-secondaire min-h-11 px-3 text-xs"
-                    >
-                      {act.label} →
-                    </Link>
-                  ))}
+                  {m.actions.map((act, i) =>
+                    "lien" in act ? (
+                      <Link
+                        key={i}
+                        href={act.lien}
+                        onClick={onFermer}
+                        className="bouton-secondaire min-h-11 px-3 text-xs"
+                      >
+                        {act.label} →
+                      </Link>
+                    ) : (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          setPlanif(act.planifier);
+                          onFermer();
+                        }}
+                        className="bouton-secondaire min-h-11 px-3 text-xs"
+                      >
+                        {act.label} →
+                      </button>
+                    )
+                  )}
                 </div>
               )}
             </div>
@@ -244,6 +261,22 @@ export default function FeuilleChatMiamz({
           </button>
         </form>
       </div>
-    </FeuilleModale>
+      </FeuilleModale>
+
+      <FeuilleModale
+        ouvert={planif !== null}
+        onFermer={() => setPlanif(null)}
+        titre={planif ? `Ajouter « ${planif.titre} » au planning` : "Ajouter au planning"}
+        footer={
+          <button type="button" onClick={() => setPlanif(null)} className="bouton min-h-11 w-full">
+            Fermer
+          </button>
+        }
+      >
+        {planif && (
+          <FormulaireAjoutPlanning recette={{ id: planif.recetteId, title: planif.titre }} />
+        )}
+      </FeuilleModale>
+    </>
   );
 }

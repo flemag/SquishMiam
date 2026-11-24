@@ -4,10 +4,16 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import RecettesClient from "@/components/recettes/recettes-client";
 
-export default async function RecettesPage() {
+export default async function RecettesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ recette?: string }>;
+}) {
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) redirect("/connexion");
+
+  const { recette } = await searchParams;
 
   const [recipes, categories] = await Promise.all([
     db.recipe.findMany({
@@ -43,6 +49,7 @@ export default async function RecettesPage() {
       ) : (
         <RecettesClient
           categories={categories}
+          recetteInitialeId={recette ?? null}
           recettes={recipes.map((r) => ({
             id: r.id,
             title: r.title,

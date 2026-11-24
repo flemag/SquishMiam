@@ -1,9 +1,13 @@
 import { HUMEURS, type HumeurId } from "@/lib/humeurs";
 
+export type ActionMiamz =
+  | { label: string; lien: string }
+  | { label: string; planifier: { recetteId: string; titre: string } };
+
 export type ReponseMiamz = {
   reponse: string;
   humeur: HumeurId;
-  actions?: { label: string; lien: string }[];
+  actions?: ActionMiamz[];
 };
 
 export type ContexteCuisine = {
@@ -127,10 +131,16 @@ export function parserReponseMiamz(
           )
         : undefined) ?? candidates.find((r) => reponseMinuscule.includes(r.title.toLowerCase()));
 
-    const actions: { label: string; lien: string }[] = [];
+    const actions: ActionMiamz[] = [];
     if (recetteTrouvee) {
-      actions.push({ label: `Voir la recette : ${recetteTrouvee.title}`, lien: "/recettes" });
-      actions.push({ label: "Ouvrir le planning", lien: "/plan" });
+      actions.push({
+        label: `Voir la recette : ${recetteTrouvee.title}`,
+        lien: `/recettes?recette=${recetteTrouvee.id}`,
+      });
+      actions.push({
+        label: "Mettre au planning",
+        planifier: { recetteId: recetteTrouvee.id, titre: recetteTrouvee.title },
+      });
     }
 
     return {
@@ -189,8 +199,11 @@ export function reponseCharmeLocal(message: string, contexte: ContexteCuisine): 
       reponse: `Pour aller vite, je te conseille ${choix.title}${choix.minutes ? ` (prêt en ${choix.minutes} minutes)` : ""} ! C'est rapide et super bon. 🍙`,
       humeur: "motive",
       actions: [
-        { label: `Voir : ${choix.title}`, lien: "/recettes" },
-        { label: "Planifier ce repas", lien: "/plan" },
+        { label: `Voir : ${choix.title}`, lien: `/recettes?recette=${choix.id}` },
+        {
+          label: "Planifier ce repas",
+          planifier: { recetteId: choix.id, titre: choix.title },
+        },
       ],
     };
   }
@@ -207,8 +220,11 @@ export function reponseCharmeLocal(message: string, contexte: ContexteCuisine): 
       reponse: `Que dis-tu de ${choix.title} ? C'est parfait pour un repas végé plein de saveurs ! 🌱`,
       humeur: "content",
       actions: [
-        { label: `Voir : ${choix.title}`, lien: "/recettes" },
-        { label: "Ajouter au planning", lien: "/plan" },
+        { label: `Voir : ${choix.title}`, lien: `/recettes?recette=${choix.id}` },
+        {
+          label: "Ajouter au planning",
+          planifier: { recetteId: choix.id, titre: choix.title },
+        },
       ],
     };
   }
@@ -220,8 +236,11 @@ export function reponseCharmeLocal(message: string, contexte: ContexteCuisine): 
     reponse: `Pour ce soir, je te propose ${choix.title}${choix.minutes ? ` (${choix.minutes} min)` : ""} ! Ça te tente ? Miam miam ! ✨`,
     humeur: "motive",
     actions: [
-      { label: `Voir : ${choix.title}`, lien: "/recettes" },
-      { label: "Mettre au planning", lien: "/plan" },
+      { label: `Voir : ${choix.title}`, lien: `/recettes?recette=${choix.id}` },
+      {
+        label: "Mettre au planning",
+        planifier: { recetteId: choix.id, titre: choix.title },
+      },
     ],
   };
 }

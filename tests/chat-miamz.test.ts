@@ -50,8 +50,11 @@ describe("parserReponseMiamz", () => {
     expect(res.reponse).toBe("Je te conseille le Gratin de courgettes !");
     expect(res.humeur).toBe("motive");
     expect(res.actions).toEqual([
-      { label: "Voir la recette : Gratin de courgettes", lien: "/recettes" },
-      { label: "Ouvrir le planning", lien: "/plan" },
+      { label: "Voir la recette : Gratin de courgettes", lien: "/recettes?recette=rec-1" },
+      {
+        label: "Mettre au planning",
+        planifier: { recetteId: "rec-1", titre: "Gratin de courgettes" },
+      },
     ]);
   });
 
@@ -103,7 +106,7 @@ describe("parserReponseMiamz", () => {
     );
     expect(res.actions?.[0]).toEqual({
       label: "Voir la recette : Curry de lentilles",
-      lien: "/recettes",
+      lien: "/recettes?recette=rec-2",
     });
   });
 
@@ -133,6 +136,13 @@ describe("reponseCharmeLocal", () => {
   it("filtre les recettes rapides si demandé", () => {
     const res = reponseCharmeLocal("une idée rapide en moins de 20 min ?", contexte);
     expect(res.reponse).toContain("Pâtes au pesto");
+    expect(res.actions).toEqual([
+      { label: "Voir : Pâtes au pesto", lien: "/recettes?recette=1" },
+      {
+        label: "Planifier ce repas",
+        planifier: { recetteId: "1", titre: "Pâtes au pesto" },
+      },
+    ]);
   });
 
   it("donne un conseil gentil quand il n'y a aucune recette", () => {

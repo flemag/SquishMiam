@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   filtrerRecettes,
@@ -31,10 +32,13 @@ const DUREES: { label: string; valeur: number | null }[] = [
 export default function RecettesClient({
   recettes,
   categories,
+  recetteInitialeId = null,
 }: {
   recettes: RecetteVue[];
   categories: CategorieVue[];
+  recetteInitialeId?: string | null;
 }) {
+  const router = useRouter();
   const { data: session } = useSession();
   const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const [requete, setRequete] = useState("");
@@ -42,7 +46,20 @@ export default function RecettesClient({
   const [tagsChoisis, setTagsChoisis] = useState<string[]>([]);
   const [dureeMax, setDureeMax] = useState<number | null>(null);
   const [tri, setTri] = useState<Tri>("recent");
-  const [recetteOuverte, setRecetteOuverte] = useState<VueRechercheable | null>(null);
+  const [recetteOuverte, setRecetteOuverte] = useState<RecetteVue | null>(null);
+
+  // Lien direct depuis Miamz : /recettes?recette=<id> ouvre la fiche demandée.
+  useEffect(() => {
+    if (!recetteInitialeId) return;
+    const trouvee = recettes.find((r) => r.id === recetteInitialeId);
+    if (trouvee) setRecetteOuverte(trouvee);
+  }, [recetteInitialeId, recettes]);
+
+  function fermerRecette() {
+    setRecetteOuverte(null);
+    // Nettoie l'URL pour qu'un nouveau clic sur le même lien rouvre la fiche.
+    if (recetteInitialeId) router.replace("/recettes");
+  }
 
   // Compter la fréquence de chaque tag
   const tagCounts = new Map<string, number>();
@@ -217,7 +234,7 @@ export default function RecettesClient({
         </div>
       )}
 
-      <FeuilleRecette recette={recetteOuverte} onFermer={() => setRecetteOuverte(null)} />
+      <FeuilleRecette recette={recetteOuverte} onFermer={fermerRecette} />
     </div>
   );
 }
