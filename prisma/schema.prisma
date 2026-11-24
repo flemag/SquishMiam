@@ -70,6 +70,7 @@ model Recipe {
   isPublic        Boolean         @default(false)
   publishedAt     DateTime?
   validatedAt     DateTime?
+  boostedUntil    DateTime?
   validationCount Int             @default(0)
   validators      String[]        // user IDs ayant validé
   sharedWith      String[]        // user IDs ayant ajouté à leurs recettes

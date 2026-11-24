@@ -37,6 +37,7 @@ export async function GET(req: Request) {
         tags: true,
         validationCount: true,
         publishedAt: true,
+        boostedUntil: true,
         createdBy: { select: { id: true, name: true, image: true } },
         categorie: { select: { id: true, nom: true } },
       },

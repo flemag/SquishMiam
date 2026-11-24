@@ -55,6 +55,9 @@ export default function FeuilleRecette({
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState(false);
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
+  const [boostEnCours, setBoostEnCours] = useState(false);
+  const [boostMessage, setBoostMessage] = useState<string | null>(null);
+  const [boostErreur, setBoostErreur] = useState(false);
 
   async function supprimer() {
     if (!recette) return;
@@ -70,6 +73,29 @@ export default function FeuilleRecette({
       }
     } finally {
       setEnCours(false);
+    }
+  }
+
+  async function booster() {
+    if (!recette) return;
+    setBoostEnCours(true);
+    setBoostMessage(null);
+    setBoostErreur(false);
+    try {
+      const res = await fetch(`/api/recipes/${recette.id}/boost`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setBoostMessage("✨ Recette mise en avant pour 7 jours !");
+        router.refresh();
+      } else {
+        setBoostErreur(true);
+        setBoostMessage(data.error ?? "Boost impossible — réessaie.");
+      }
+    } catch {
+      setBoostErreur(true);
+      setBoostMessage("Boost impossible — réessaie.");
+    } finally {
+      setBoostEnCours(false);
     }
   }
 
@@ -123,6 +149,29 @@ export default function FeuilleRecette({
               {t}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Boost boutique */}
+      {recette.isPublic && (
+        <div className="mt-4 rounded-2xl border border-[#E07A5F]/30 bg-[#E07A5F]/5 p-3">
+          <h3 className="text-sm font-semibold text-foreground">Mettre en avant</h3>
+          <p className="mt-1 text-xs text-texte-doux">
+            3 jetons → 7 jours en tête de la boutique.
+          </p>
+          {boostMessage && (
+            <p className={`mt-2 text-sm font-medium ${boostErreur ? "text-danger" : "text-[#4A6741]"}`}>
+              {boostMessage}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={booster}
+            disabled={boostEnCours}
+            className="bouton mt-2 min-h-11 w-full"
+          >
+            {boostEnCours ? "Boost…" : "Mettre en avant (3 jetons)"}
+          </button>
         </div>
       )}
 
