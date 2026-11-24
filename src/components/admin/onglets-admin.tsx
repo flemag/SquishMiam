@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const ONGLETS = [
   { href: "/admin", label: "Vue d'ensemble" },
   { href: "/admin/boutique", label: "Boutique" },
+  { href: "/admin/boutique-catalogue", label: "Catalogue" },
   { href: "/admin/cles", label: "Clés" },
   { href: "/admin/jetons", label: "Jetons" },
   { href: "/admin/categories", label: "Catégories" },
