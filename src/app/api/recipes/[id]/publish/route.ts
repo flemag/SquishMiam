@@ -10,31 +10,43 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { id } = await params;
 
-  try {
-    await exigerAuteur(id, userId);
-  } catch (err) {
-    const e = err as Error & { status?: number };
-    return NextResponse.json({ error: e.message }, { status: e.status || 403 });
-  }
-
   const body = await req.json().catch(() => ({}));
   const publish = body?.publish === true;
 
   const now = new Date();
 
   if (publish) {
-    // Publication : reset validationCount, validators, publishedAt
-    await db.recipe.update({
-      where: { id },
-      data: {
+    // Publication
+    let data: Record<string, unknown>;
+    try {
+      // Auteur : publication normale (en attente de validation)
+      await exigerAuteur(id, userId);
+      data = {
         isPublic: true,
         publishedAt: now,
         validationCount: 0,
         validators: [],
-      },
-    });
+      };
+    } catch {
+      // Pas l'auteur : vérifier si admin
+      const user = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
+      if (user?.role !== "ADMIN") {
+        return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+      }
+      // Admin : publication immédiate (validée)
+      data = { isPublic: true, publishedAt: now, validatedAt: now, validationCount: 0, validators: [] };
+    }
+    await db.recipe.update({ where: { id }, data });
   } else {
-    // Retrait : tout nettoyer
+    // Retrait : tout nettoyer (auteur ou admin)
+    try {
+      await exigerAuteur(id, userId);
+    } catch {
+      const user = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
+      if (user?.role !== "ADMIN") {
+        return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+      }
+    }
     await db.recipe.update({
       where: { id },
       data: {
