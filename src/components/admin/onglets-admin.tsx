@@ -8,6 +8,7 @@ const ONGLETS = [
   { href: "/admin/cles", label: "Clés" },
   { href: "/admin/categories", label: "Catégories" },
   { href: "/admin/utilisateurs", label: "Utilisateurs" },
+  { href: "/admin/signalements", label: "Signalements" },
 ];
 
 export default function OngletsAdmin() {
