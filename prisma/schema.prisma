@@ -23,6 +23,9 @@ model User {
   sessions            Session[]
   tokens              Int       @default(0)
   xp                  Int       @default(0)
+  purchasedItems      String[]  @default([])
+  activeTheme         String?
+  activeAccessory     String?
   householdSize       Int       @default(1) // portions par défaut (taille du foyer)
   goal                String    @default("equilibre") // objectif nutritionnel
   validatedRecipes    String[]  // recipe IDs validées
@@ -151,9 +154,21 @@ model TokenTransaction {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount    Int      // +1 pour validation, -X pour achats futurs
-  reason    String   // "validation" | "achat" | "bonus"
+  reason    String   // "validation" | "achat" | "bonus" | "boost" | "xp:..."
   recipeId  String?  // recette concernée
   createdAt DateTime @default(now())
+}
+
+model BoutiqueItem {
+  id          String   @id @default(cuid())
+  type        String   // "theme" | "accessoire" | "pack"
+  nom         String
+  description String   @default("")
+  prix        Int      @default(0) // 0 = gratuit
+  image       String?
+  metadata    Json     @default("{}")
+  actif       Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
 
 enum ReportStatus {
