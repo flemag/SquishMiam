@@ -15,6 +15,7 @@ export type RecetteBoutique = {
   publishedAt: string | null;
   createdBy: { id: string; name: string | null; image: string | null };
   categorie: { id: string; nom: string } | null;
+  boostedUntil?: string | null;
 };
 
 export type BoutiquePageProps = {
@@ -22,30 +23,32 @@ export type BoutiquePageProps = {
   categories: CategorieVue[];
 };
 
+const REASONS = ["spam", "inapproprié", "autre"] as const;
+type Reason = (typeof REASONS)[number];
+const REASON_LABELS: Record<Reason, string> = {
+  spam: "Spam",
+  "inapproprié": "Contenu inapproprié",
+  autre: "Autre",
+};
+
 export default function BoutiquePage({ recettes: initialRecettes, categories: initialCategories }: BoutiquePageProps) {
   const { data: session } = useSession();
   const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const router = useRouter();
   const [recettes, setRecettes] = useState<RecetteBoutique[]>(initialRecettes);
-  const [categories, setCategories] = useState<CategorieVue[]>(initialCategories);
+  const [categories] = useState<CategorieVue[]>(initialCategories);
   const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [tri, setTri] = useState<"validations" | "recent">("validations");
   const [page, setPage] = useState(1);
-  const limit = 20;
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
   const [dialogue, setDialogue] = useState<{ type: "partager" | "signaler"; recette: RecetteBoutique; reason?: string; detail?: string } | null>(null);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  const REASONS = ["spam", "inapproprié", "autre"] as const;
-  type Reason = (typeof REASONS)[number];
-  const REASON_LABELS: Record<Reason, string> = {
-    spam: "Spam",
-    "inapproprié": "Contenu inapproprié",
-    autre: "Autre",
-  };
+  const limit = 20;
 
   const filteredRecettes = recettes.filter((r) => {
     if (categorieFiltre && r.categorie?.id !== categorieFiltre) return false;
@@ -57,9 +60,15 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
   });
 
   const sortedRecettes = [...filteredRecettes].sort((a, b) => {
+    // Boostées en premier
+    const aBoost = a.boostedUntil && new Date(a.boostedUntil) > new Date() ? 1 : 0;
+    const bBoost = b.boostedUntil && new Date(b.boostedUntil) > new Date() ? 1 : 0;
+    if (aBoost !== bBoost) return bBoost - aBoost;
     if (tri === "validations") return b.validationCount - a.validationCount;
     return new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime();
   });
+
+  const filtresActifs = categorieFiltre !== null || tri !== "validations";
 
   async function loadMore() {
     if (loading || !hasMore) return;
@@ -148,53 +157,111 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
     }
   }
 
+  const isBoosted = (r: RecetteBoutique) => !!r.boostedUntil && new Date(r.boostedUntil) > new Date();
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-miamz-vert">Boutique communautaire</h1>
-          <p className="text-sm text-texte-doux">Recettes validées par la communauté — 3 validations = badge ✅</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold text-miamz-vert">Boutique communautaire</h1>
+        <p className="text-sm text-texte-doux">Recettes validées par la communauté — 3 validations = badge ✅</p>
       </div>
 
-      {/* Recherche + Filtres */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher un titre ou un ingrédient…"
-          aria-label="Rechercher"
-          className="champ w-full sm:flex-1 rounded-full"
-        />
-        <div className="flex flex-wrap gap-2">
-          <select
-            value={categorieFiltre ?? ""}
-            onChange={(e) => setCategorieFiltre(e.target.value || null)}
-            aria-label="Filtrer par catégorie"
-            className="champ min-h-11 px-3 text-sm"
+      {/* Recherche + filtre compact */}
+      <div className="sticky top-[4.25rem] z-10 -mx-4 bg-fond-voile px-4 py-2 backdrop-blur">
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un titre ou un tag…"
+            aria-label="Rechercher"
+            className="champ w-full rounded-full"
+          />
+          <button
+            type="button"
+            onClick={() => setFiltresOuverts((v) => !v)}
+            aria-expanded={filtresOuverts}
+            aria-label="Filtres"
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition ${
+              filtresActifs
+                ? "border-[#4A6741] bg-[#4A6741] text-white"
+                : "border-bordure bg-white text-texte-doux"
+            }`}
           >
-            <option value="">Toutes les catégories</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.nom}</option>
-            ))}
-          </select>
-          <select
-            value={tri}
-            onChange={(e) => setTri(e.target.value as "validations" | "recent")}
-            aria-label="Trier par"
-            className="champ min-h-11 px-3 text-sm"
-          >
-            <option value="validations">Plus validées</option>
-            <option value="recent">Plus récentes</option>
-          </select>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true">
+              <path d="M3 6h18M6 12h12M9 18h6" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
+
+        {filtresOuverts && (
+          <div className="mt-2 flex flex-col gap-2">
+            {/* Catégories — scroll horizontal */}
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setCategorieFiltre(null)}
+                aria-pressed={categorieFiltre === null}
+                className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                  categorieFiltre === null ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                Toutes
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCategorieFiltre(c.id)}
+                  aria-pressed={categorieFiltre === c.id}
+                  className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                    categorieFiltre === c.id ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                  }`}
+                >
+                  {c.nom}
+                </button>
+              ))}
+            </div>
+            {/* Tri */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setTri("validations")}
+                aria-pressed={tri === "validations"}
+                className={`min-h-9 flex-1 rounded-full px-3 text-xs font-medium transition ${
+                  tri === "validations" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                Plus validées
+              </button>
+              <button
+                type="button"
+                onClick={() => setTri("recent")}
+                aria-pressed={tri === "recent"}
+                className={`min-h-9 flex-1 rounded-full px-3 text-xs font-medium transition ${
+                  tri === "recent" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                Plus récentes
+              </button>
+            </div>
+            {filtresActifs && (
+              <button
+                type="button"
+                onClick={() => { setSearch(""); setCategorieFiltre(null); setTri("validations"); }}
+                className="bouton-secondaire min-h-9 self-start px-3 text-xs"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {erreur && <div role="status" className="text-sm text-danger">{erreur}</div>}
 
-      {/* Grille recettes */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Grille recettes — 1 col mobile, 2 tablette, 3 desktop */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {sortedRecettes.length === 0 ? (
           <div className="col-span-full carte p-10 text-center">
             <div className="text-4xl">🔍</div>
@@ -206,11 +273,19 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
         ) : (
           <>
             {sortedRecettes.map((r) => (
-              <article key={r.id} className="carte p-4 flex flex-col">
+              <article
+                key={r.id}
+                className={`carte flex flex-col p-4 ${isBoosted(r) ? "ring-2 ring-[#E07A5F]/40" : ""}`}
+              >
                 <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                  {isBoosted(r) && (
+                    <span className="rounded-full bg-[#E07A5F]/15 px-2 py-0.5 text-xs font-medium text-[#8c2f3f]">
+                      ✨ Sponsorisée
+                    </span>
+                  )}
                   {r.validationCount >= 3 && (
-                    <span className="badge-validée flex items-center gap-1 rounded-full bg-[#A8E6CF]/20 px-2 py-0.5 text-xs font-medium text-[#2e5340]">
-                      ✅ Validée ({r.validationCount}/3+)
+                    <span className="rounded-full bg-[#A8E6CF]/20 px-2 py-0.5 text-xs font-medium text-[#2e5340]">
+                      ✅ Validée
                     </span>
                   )}
                 </div>
@@ -227,7 +302,7 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
                     ))}
                   </div>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-auto pt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => ouvrirPartager(r)}
@@ -249,14 +324,25 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
             ))}
             {hasMore && (
               <div className="col-span-full">
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loading}
-                  className="bouton-secondaire w-full min-h-11"
-                >
-                  {loading ? "Chargement…" : "Voir plus"}
-                </button>
+                {loading ? (
+                  <div className="flex flex-col gap-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="carte animate-pulse p-4">
+                        <div className="h-4 w-2/3 rounded bg-gray-200" />
+                        <div className="mt-2 h-3 w-1/3 rounded bg-gray-200" />
+                        <div className="mt-3 h-8 w-full rounded bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    className="bouton-secondaire w-full min-h-11"
+                  >
+                    Voir plus
+                  </button>
+                )}
               </div>
             )}
           </>
