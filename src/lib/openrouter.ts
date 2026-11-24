@@ -11,6 +11,16 @@ export const MODELES_GRATUITS = [
 ];
 
 /**
+ * Modèles gratuits avec capacité vision sur OpenRouter.
+ * Essayés dans l'ordre ; le premier qui répond utilisablement l'emporte.
+ */
+export const MODELES_VISION = [
+  "google/gemini-2.0-flash-exp:free",
+  "meta-llama/llama-3.2-11b-vision-instruct:free",
+  "qwen/qwen-2-vl-7b-instruct:free",
+];
+
+/**
  * Demande une réponse texte à OpenRouter en essayant les modèles gratuits dans
  * l'ordre, sous un délai global. Renvoie `null` sans clé, quota épuisé,
  * réponse vide ou délai dépassé : l'appelant décide du repli.
@@ -44,6 +54,81 @@ export async function demanderReponseIa(
         body: JSON.stringify({
           model: modele,
           messages,
+          temperature,
+          max_tokens: maxTokens,
+          response_format: { type: "json_object" },
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) continue;
+
+      const data = await res.json().catch(() => null);
+      const content = data?.choices?.[0]?.message?.content;
+      if (typeof content === "string" && content.trim()) {
+        return content;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Demande une réponse à un modèle vision en essayant les modèles gratuits
+ * dans l'ordre, sous un délai global. L'image est envoyée en base64 (data URL).
+ * Renvoie null sans clé, quota épuisé, réponse vide ou délai dépassé.
+ */
+export async function demanderReponseVision(
+  messages: { role: string; content: string }[],
+  imageBase64: string,
+  {
+    maxTokens = 1200,
+    temperature = 0.5,
+    timeoutMs = 15000,
+  }: { maxTokens?: number; temperature?: number; timeoutMs?: number } = {}
+): Promise<string | null> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    // Construire le message utilisateur avec l'image
+    const userMessage = {
+      role: "user",
+      content: [
+        { type: "text", text: messages[messages.length - 1]?.content ?? "" },
+        { type: "image_url", image_url: { url: imageBase64 } },
+      ],
+    };
+
+    const systemMessages = messages.filter((m) => m.role !== "user").map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    const payload = [...systemMessages, userMessage];
+
+    for (const modele of MODELES_VISION) {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://squishmiam.vercel.app",
+          "X-Title": "SquishMiam",
+        },
+        body: JSON.stringify({
+          model: modele,
+          messages: payload,
           temperature,
           max_tokens: maxTokens,
           response_format: { type: "json_object" },
