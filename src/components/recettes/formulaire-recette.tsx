@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMiamz } from "@/components/miamz/fournisseur";
 import type { CategorieVue } from "@/lib/categories";
@@ -48,6 +48,21 @@ export default function FormulaireRecette({
   const [importEnCours, setImportEnCours] = useState(false);
   const [erreurImport, setErreurImport] = useState<string | null>(null);
   const [succesImport, setSuccesImport] = useState(false);
+
+  // Préremplir depuis un brouillon photo frigo (sessionStorage)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = sessionStorage.getItem("brouillonPhotoFrigo");
+    if (!raw) return;
+    try {
+      const r = JSON.parse(raw);
+      remplirDepuisRecette(r);
+      sessionStorage.removeItem("brouillonPhotoFrigo");
+      setMessage(null);
+    } catch {
+      // ignore
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Remplit le formulaire depuis une recette extraite (IA ou import URL). */
   function remplirDepuisRecette(r: RecetteExtraite) {

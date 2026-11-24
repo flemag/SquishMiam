@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import RecettesClient from "@/components/recettes/recettes-client";
+import PhotoFrigo from "@/components/recettes/photo-frigo";
 
 export default async function RecettesPage({
   searchParams,
@@ -47,27 +48,57 @@ export default async function RecettesPage({
           <p className="mt-1 text-sm text-texte-tres-doux">Ajoute ta première recette pour commencer à planifier.</p>
         </div>
       ) : (
-        <RecettesClient
-          categories={categories}
-          recetteInitialeId={recette ?? null}
-          recettes={recipes.map((r) => ({
-            id: r.id,
-            title: r.title,
-            servings: r.servings,
-            minutes: r.minutes,
-            tags: r.tags,
-            ingredients: r.ingredients,
-            steps: r.steps,
-            categorieId: r.categorieId,
-            categorieNom: r.categorie?.nom ?? null,
-            isPublic: r.isPublic,
-            validatedAt: r.validatedAt,
-            validationCount: r.validationCount,
-            isSharedCopy: r.isSharedCopy,
-            createdById: r.createdById,
-            validators: r.validators,
-          }))}
-        />
+        <>
+          <div className="mb-4">
+            <PhotoFrigo
+              recettes={recipes.map((r) => ({
+                id: r.id,
+                title: r.title,
+                servings: r.servings,
+                minutes: r.minutes,
+                tags: r.tags,
+                ingredients: r.ingredients,
+                steps: r.steps,
+                categorieId: r.categorieId,
+                categorieNom: r.categorie?.nom ?? null,
+                isPublic: r.isPublic,
+                validatedAt: r.validatedAt,
+                validationCount: r.validationCount,
+                isSharedCopy: r.isSharedCopy,
+                createdById: r.createdById,
+                validators: r.validators,
+              }))}
+              onBrouillon={(r) => {
+                // Store in sessionStorage and navigate to new recipe form
+                if (typeof window !== "undefined") {
+                  sessionStorage.setItem("brouillonPhotoFrigo", JSON.stringify(r));
+                  window.location.href = "/recettes/nouvelle";
+                }
+              }}
+            />
+          </div>
+          <RecettesClient
+            categories={categories}
+            recetteInitialeId={recette ?? null}
+            recettes={recipes.map((r) => ({
+              id: r.id,
+              title: r.title,
+              servings: r.servings,
+              minutes: r.minutes,
+              tags: r.tags,
+              ingredients: r.ingredients,
+              steps: r.steps,
+              categorieId: r.categorieId,
+              categorieNom: r.categorie?.nom ?? null,
+              isPublic: r.isPublic,
+              validatedAt: r.validatedAt,
+              validationCount: r.validationCount,
+              isSharedCopy: r.isSharedCopy,
+              createdById: r.createdById,
+              validators: r.validators,
+            }))}
+          />
+        </>
       )}
     </main>
   );
