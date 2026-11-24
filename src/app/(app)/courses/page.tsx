@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { formatDateIso, formatJourFr, getWeekDates, weekStart } from "@/lib/plan";
 import { RAYONS } from "@/lib/rayons";
 import ListeCourses from "@/components/courses/liste";
+import AnalyseMiamz from "@/components/miamz/analyse";
 
 type ItemVue = {
   id: string;
@@ -76,7 +77,8 @@ export default async function CoursesPage({
             Semaine du {formatJourFr(dates[0])} · {coches}/{visibles.length} cochés
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <AnalyseMiamz portee="courses" semaine={formatDateIso(debut)} label="Astuces courses" />
           <a
             href={`/courses?semaine=${formatDateIso(prev)}`}
             className="bouton-secondaire"

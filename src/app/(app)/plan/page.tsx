@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { formatDateIso, formatJourFr, getWeekDates, SLOTS, SLOT_LABELS, weekStart } from "@/lib/plan";
 import GrillePlan from "@/components/plan/grille";
+import AnalyseMiamz from "@/components/miamz/analyse";
 
 export default async function PlanPage({
   searchParams,
@@ -62,7 +63,8 @@ export default async function PlanPage({
             {formatJourFr(dates[0])} → {formatJourFr(dates[6])}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <AnalyseMiamz portee="semaine" semaine={formatDateIso(debut)} label="Analyser ma semaine" />
           <a
             href={`/plan?semaine=${formatDateIso(prev)}`}
             className="bouton-secondaire px-4"
