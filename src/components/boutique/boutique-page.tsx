@@ -18,9 +18,21 @@ export type RecetteBoutique = {
   boostedUntil?: string | null;
 };
 
+export type ArticleBoutique = {
+  id: string;
+  type: string;
+  nom: string;
+  description: string;
+  prix: number;
+  image: string | null;
+  metadata: unknown;
+};
+
 export type BoutiquePageProps = {
   recettes: RecetteBoutique[];
   categories: CategorieVue[];
+  articles: ArticleBoutique[];
+  tokens: number;
 };
 
 const REASONS = ["spam", "inapproprié", "autre"] as const;
@@ -31,12 +43,14 @@ const REASON_LABELS: Record<Reason, string> = {
   autre: "Autre",
 };
 
-export default function BoutiquePage({ recettes: initialRecettes, categories: initialCategories }: BoutiquePageProps) {
+export default function BoutiquePage({ recettes: initialRecettes, categories: initialCategories, articles: initialArticles, tokens: initialTokens }: BoutiquePageProps) {
   const { data: session } = useSession();
   const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const router = useRouter();
   const [recettes, setRecettes] = useState<RecetteBoutique[]>(initialRecettes);
   const [categories] = useState<CategorieVue[]>(initialCategories);
+  const [articles] = useState<ArticleBoutique[]>(initialArticles);
+  const [tokens, setTokens] = useState(initialTokens);
   const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [tri, setTri] = useState<"validations" | "recent">("validations");
@@ -47,6 +61,34 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
   const [dialogue, setDialogue] = useState<{ type: "partager" | "signaler"; recette: RecetteBoutique; reason?: string; detail?: string } | null>(null);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [achatEnCours, setAchatEnCours] = useState<string | null>(null);
+  const [achatMessage, setAchatMessage] = useState<string | null>(null);
+
+  async function acheter(itemId: string) {
+    setAchatEnCours(itemId);
+    setAchatMessage(null);
+    try {
+      const res = await fetch("/api/boutique/acheter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setTokens(data.tokens);
+        setAchatMessage("Achat réussi ! ✨");
+        router.refresh();
+      } else {
+        setAchatMessage(data.error ?? "Achat impossible — réessaie.");
+      }
+    } catch {
+      setAchatMessage("Achat impossible — réessaie.");
+    } finally {
+      setAchatEnCours(null);
+    }
+  }
+
+  const isBoosted = (r: RecetteBoutique) => !!r.boostedUntil && new Date(r.boostedUntil) > new Date();
 
   const limit = 20;
 
@@ -157,8 +199,6 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
     }
   }
 
-  const isBoosted = (r: RecetteBoutique) => !!r.boostedUntil && new Date(r.boostedUntil) > new Date();
-
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -260,7 +300,46 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
 
       {erreur && <div role="status" className="text-sm text-danger">{erreur}</div>}
 
-      {/* Grille recettes — 1 col mobile, 2 tablette, 3 desktop */}
+      {achatMessage && (
+        <div role="status" className={`text-sm font-medium ${achatMessage.includes("réessaie") || achatMessage.includes("impossible") || achatMessage.includes("insuffisant") ? "text-danger" : "text-[#4A6741]"}`}>
+          {achatMessage}
+        </div>
+      )}
+
+      {/* Articles de la boutique (thèmes, accessoires, packs) */}
+      {articles.length > 0 && (
+        <div>
+          <h2 className="mb-2 text-lg font-semibold text-miamz-vert">Articles</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {articles.map((a) => (
+              <article key={a.id} className="carte flex flex-col p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="text-2xl">
+                    {a.type === "theme" ? "🎨" : a.type === "accessoire" ? "✨" : "📦"}
+                  </span>
+                  <h3 className="font-semibold text-foreground">{a.nom}</h3>
+                </div>
+                {a.description && <p className="text-sm text-texte-doux">{a.description}</p>}
+                <div className="mt-auto pt-3 flex items-center justify-between">
+                  <span className="text-sm font-medium text-[#4A6741]">
+                    {a.prix === 0 ? "Gratuit" : `${a.prix} jetons`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => acheter(a.id)}
+                    disabled={achatEnCours === a.id}
+                    className="bouton min-h-9 px-3 text-sm"
+                  >
+                    {achatEnCours === a.id ? "Achat…" : "Acheter"}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Grille recettes - 1 col mobile, 2 tablette, 3 desktop */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {sortedRecettes.length === 0 ? (
           <div className="col-span-full carte p-10 text-center">
