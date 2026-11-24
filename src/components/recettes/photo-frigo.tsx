@@ -12,13 +12,7 @@ type Resultat = {
   brouillon: RecetteExtraite | null;
 };
 
-export default function PhotoFrigo({
-  recettes,
-  onBrouillon,
-}: {
-  recettes: RecetteVue[];
-  onBrouillon: (recette: RecetteExtraite) => void;
-}) {
+export default function PhotoFrigo({ recettes }: { recettes: RecetteVue[] }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState<string | null>(null);
@@ -113,9 +107,13 @@ export default function PhotoFrigo({
   function ouvrirRecette(id: string) {
     const r = recettes.find((x) => x.id === id);
     if (r) {
-      // Trigger the recipe sheet via a custom event or router
       router.push(`/recettes?recette=${id}`);
     }
+  }
+
+  function utiliserBrouillon(recette: RecetteExtraite) {
+    sessionStorage.setItem("brouillonPhotoFrigo", JSON.stringify(recette));
+    router.push("/recettes/nouvelle");
   }
 
   return (
@@ -182,7 +180,6 @@ export default function PhotoFrigo({
 
           {resultat && (
             <div className="flex flex-col gap-4">
-              {/* Ingrédients détectés */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Ingrédients détectés</h3>
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -192,7 +189,6 @@ export default function PhotoFrigo({
                 </div>
               </div>
 
-              {/* Recettes qui matchent */}
               {resultat.recettesMatchees.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Tes recettes qui matchent</h3>
@@ -215,7 +211,6 @@ export default function PhotoFrigo({
                 </div>
               )}
 
-              {/* Brouillon */}
               {resultat.brouillon && (
                 <div className="rounded-2xl border border-[#A8E6CF] bg-[#A8E6CF]/10 p-3">
                   <h3 className="text-sm font-semibold text-foreground">Brouillon proposé</h3>
@@ -223,7 +218,7 @@ export default function PhotoFrigo({
                   <button
                     type="button"
                     onClick={() => {
-                      onBrouillon(resultat.brouillon!);
+                      utiliserBrouillon(resultat.brouillon!);
                       reinitialiser();
                     }}
                     className="bouton mt-2 min-h-11 w-full"
