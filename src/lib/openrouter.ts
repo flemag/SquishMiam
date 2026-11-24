@@ -18,6 +18,7 @@ export const MODELES_VISION = [
   "google/gemini-2.0-flash-exp:free",
   "meta-llama/llama-3.2-11b-vision-instruct:free",
   "qwen/qwen-2-vl-7b-instruct:free",
+  "mistralai/pixtral-12b:free",
 ];
 
 /**
@@ -131,7 +132,6 @@ export async function demanderReponseVision(
           messages: payload,
           temperature,
           max_tokens: maxTokens,
-          response_format: { type: "json_object" },
         }),
         signal: controller.signal,
       });

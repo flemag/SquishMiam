@@ -78,7 +78,7 @@ Règles :
   );
 
   if (!contenu) {
-    return NextResponse.json({ error: "Miamz n'a pas réussi à lire ton frigo — réessaie." }, { status: 422 });
+    return NextResponse.json({ error: "Miamz n'a pas réussi à lire ton frigo — aucun modèle vision disponible. Vérifie ta clé OpenRouter." }, { status: 422 });
   }
 
   const parsed = parserPhotoFrigo(contenu);
