@@ -14,6 +14,7 @@ type Article = {
   metadata: unknown;
   actif: boolean;
   createdAt: string;
+  dejaAchete?: boolean;
 };
 
 const TYPES = [
@@ -237,9 +238,16 @@ export default function BoutiqueCatalogueClient({ articles: initiaux }: { articl
                   </p>
                   <p className="text-xs text-texte-doux">{TYPE_LABELS[a.type] ?? a.type} · {a.prix === 0 ? "Gratuit" : `${a.prix} jetons`}</p>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.actif ? "bg-[#A8E6CF] text-[#2e5340]" : "bg-gray-200 text-texte-doux"}`}>
-                  {a.actif ? "Actif" : "Inactif"}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {a.dejaAchete && (
+                    <span className="rounded-full bg-[#A8E6CF]/30 px-2 py-0.5 text-xs font-medium text-[#2e5340]">
+                      ✓ Possédé
+                    </span>
+                  )}
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.actif ? "bg-[#A8E6CF] text-[#2e5340]" : "bg-gray-200 text-texte-doux"}`}>
+                    {a.actif ? "Actif" : "Inactif"}
+                  </span>
+                </div>
               </div>
               {a.description && <p className="text-sm text-texte-doux">{a.description}</p>}
               <div className="flex flex-wrap gap-2">

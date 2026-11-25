@@ -5,13 +5,17 @@ import BoutiqueCatalogueClient from "@/components/admin/boutique-catalogue-clien
 export default async function AdminBoutiqueCataloguePage() {
   await exigerAdmin();
 
-  const articles = await db.boutiqueItem.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [articles, users] = await Promise.all([
+    db.boutiqueItem.findMany({ orderBy: { createdAt: "desc" } }),
+    db.user.findMany({ where: { purchasedItems: { isEmpty: false } }, select: { purchasedItems: true } }),
+  ]);
+
+  const allPurchased = new Set(users.flatMap((u) => u.purchasedItems));
 
   const articlesVue = articles.map((a) => ({
     ...a,
     createdAt: a.createdAt.toISOString(),
+    dejaAchete: allPurchased.has(a.id),
   }));
 
   return (

@@ -85,16 +85,18 @@ export default function MiamzSvg({
           strokeLinejoin="round"
         />
         {accessoire && (
-          <text
-            x={accessoire.position === "tete" ? 100 : 100}
-            y={accessoire.position === "tete" ? 22 : 135}
-            fontSize={accessoire.position === "tete" ? 28 : 22}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            style={{ userSelect: "none" }}
-          >
-            {accessoire.emoji}
-          </text>
+          <g className="miamz-accessoire" style={{ animation: "accessoire-flottement 3s ease-in-out infinite" }}>
+            <text
+              x={accessoire.position === "tete" ? 100 : 100}
+              y={accessoire.position === "tete" ? 22 : 135}
+              fontSize={accessoire.position === "tete" ? 28 : 22}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              style={{ userSelect: "none" }}
+            >
+              {accessoire.emoji}
+            </text>
+          </g>
         )}
       </g>
     </svg>

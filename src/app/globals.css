@@ -214,6 +214,12 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
+@keyframes miamz-accessoire-flottement {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(-2deg); }
+  50% { transform: translateY(-5px) rotate(0deg); }
+  75% { transform: translateY(-3px) rotate(2deg); }
+}
 @keyframes miamz-tilt {
   0%, 100% { transform: rotate(-5deg); }
   50% { transform: rotate(-3deg); }
@@ -411,6 +417,7 @@ html[data-theme="manga"] .fond-damier {
   .miamz-yeux,
   .miamz-bulle,
   .miamz-squelette,
+  .miamz-accessoire,
   .fond-d,
   .fond-damier {
     animation: none !important;
