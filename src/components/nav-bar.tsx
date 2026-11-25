@@ -132,7 +132,7 @@ function SelecteurTheme({ themesAchetes = [] }: { themesAchetes?: { id: string; 
     document.documentElement.dataset.boutiqueTheme = id;
     document.documentElement.dataset.theme = "boutique";
 
-    // Inject CSS overrides for the boutique theme
+    // Inject CSS overrides for the boutique theme (without html[data-boutique-theme] prefix for reliability)
     const existingStyle = document.getElementById("boutique-theme-override");
     if (existingStyle) existingStyle.remove();
 
@@ -143,34 +143,34 @@ function SelecteurTheme({ themesAchetes = [] }: { themesAchetes?: { id: string; 
     const foreground = (meta.foreground as string) ?? "#3a2e2e";
 
     const css = `
-      html[data-boutique-theme] body { background-color: ${background} !important; color: ${foreground} !important; }
-      html[data-boutique-theme] .text-\\[\\#4A6741\\] { color: ${primary} !important; }
-      html[data-boutique-theme] .bg-\\[\\#4A6741\\] { background-color: ${primary} !important; }
-      html[data-boutique-theme] .border-\\[\\#4A6741\\] { border-color: ${primary} !important; }
-      html[data-boutique-theme] .text-\\[\\#A8E6CF\\] { color: ${secondary} !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\] { background-color: ${secondary} !important; }
-      html[data-boutique-theme] .border-\\[\\#A8E6CF\\] { border-color: ${secondary} !important; }
-      html[data-boutique-theme] .text-\\[\\#3A2E2E\\] { color: ${foreground} !important; }
-      html[data-boutique-theme] .bg-\\[\\#FFF9E6\\] { background-color: ${background} !important; }
-      html[data-boutique-theme] .text-\\[\\#E07A5F\\] { color: ${accent} !important; }
-      html[data-boutique-theme] .bg-\\[\\#E07A5F\\] { background-color: ${accent} !important; }
-      html[data-boutique-theme] .border-\\[\\#E07A5F\\] { border-color: ${accent} !important; }
-      html[data-boutique-theme] .hover\\:bg-\\[\\#A8E6CF\\]\\/30:hover { background-color: ${secondary}4d !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/10 { background-color: ${secondary}1a !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/15 { background-color: ${secondary}26 !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/20 { background-color: ${secondary}33 !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/25 { background-color: ${secondary}40 !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/30 { background-color: ${secondary}4d !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/40 { background-color: ${secondary}66 !important; }
-      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/50 { background-color: ${secondary}80 !important; }
-      html[data-boutique-theme] .bg-\\[\\#FFB5C2\\]\\/25 { background-color: ${accent}40 !important; }
-      html[data-boutique-theme] .bg-\\[\\#FFB5C2\\]\\/20 { background-color: ${accent}33 !important; }
-      html[data-boutique-theme] .text-\\[\\#8c2f3f\\] { color: ${accent} !important; }
-      html[data-boutique-theme] .text-\\[\\#2e5340\\] { color: ${primary} !important; }
-      html[data-boutique-theme] .text-\\[\\#43325e\\] { color: ${primary} !important; }
-      html[data-boutique-theme] .bg-\\[\\#C9B6E4\\]\\/20 { background-color: ${secondary}33 !important; }
-      html[data-boutique-theme] .text-\\[\\#8fb5a2\\] { color: ${secondary} !important; }
-      html[data-boutique-theme] .text-\\[\\#e0e0e0\\] { color: ${foreground} !important; }
+      body { background-color: ${background} !important; color: ${foreground} !important; }
+      .text-\\[\\#4A6741\\] { color: ${primary} !important; }
+      .bg-\\[\\#4A6741\\] { background-color: ${primary} !important; }
+      .border-\\[\\#4A6741\\] { border-color: ${primary} !important; }
+      .text-\\[\\#A8E6CF\\] { color: ${secondary} !important; }
+      .bg-\\[\\#A8E6CF\\] { background-color: ${secondary} !important; }
+      .border-\\[\\#A8E6CF\\] { border-color: ${secondary} !important; }
+      .text-\\[\\#3A2E2E\\] { color: ${foreground} !important; }
+      .bg-\\[\\#FFF9E6\\] { background-color: ${background} !important; }
+      .text-\\[\\#E07A5F\\] { color: ${accent} !important; }
+      .bg-\\[\\#E07A5F\\] { background-color: ${accent} !important; }
+      .border-\\[\\#E07A5F\\] { border-color: ${accent} !important; }
+      .hover\\:bg-\\[\\#A8E6CF\\]\\/30:hover { background-color: ${secondary}4d !important; }
+      .bg-\\[\\#A8E6CF\\]\\/10 { background-color: ${secondary}1a !important; }
+      .bg-\\[\\#A8E6CF\\]\\/15 { background-color: ${secondary}26 !important; }
+      .bg-\\[\\#A8E6CF\\]\\/20 { background-color: ${secondary}33 !important; }
+      .bg-\\[\\#A8E6CF\\]\\/25 { background-color: ${secondary}40 !important; }
+      .bg-\\[\\#A8E6CF\\]\\/30 { background-color: ${secondary}4d !important; }
+      .bg-\\[\\#A8E6CF\\]\\/40 { background-color: ${secondary}66 !important; }
+      .bg-\\[\\#A8E6CF\\]\\/50 { background-color: ${secondary}80 !important; }
+      .bg-\\[\\#FFB5C2\\]\\/25 { background-color: ${accent}40 !important; }
+      .bg-\\[\\#FFB5C2\\]\\/20 { background-color: ${accent}33 !important; }
+      .text-\\[\\#8c2f3f\\] { color: ${accent} !important; }
+      .text-\\[\\#2e5340\\] { color: ${primary} !important; }
+      .text-\\[\\#43325e\\] { color: ${primary} !important; }
+      .bg-\\[\\#C9B6E4\\]\\/20 { background-color: ${secondary}33 !important; }
+      .text-\\[\\#8fb5a2\\] { color: ${secondary} !important; }
+      .text-\\[\\#e0e0e0\\] { color: ${foreground} !important; }
     `;
 
     const styleEl = document.createElement("style");
