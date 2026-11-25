@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     : 0;
 
   const utilisateur = userId
-    ? await db.user.findUnique({ where: { id: userId }, select: { role: true, activeAccessory: true, activeTheme: true } })
+    ? await db.user.findUnique({ where: { id: userId }, select: { role: true, activeAccessory: true, activeTheme: true, purchasedItems: true } })
     : null;
 
   // Charger l'accessoire actif (emoji + position)
@@ -36,13 +36,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
-  // Charger le thème actif (couleurs)
+  // Charger le thème actif (couleurs) + thèmes achetés pour le sélecteur
   let themeCouleurs: Record<string, string> | null = null;
-  if (utilisateur?.activeTheme) {
-    const item = await db.boutiqueItem.findUnique({
-      where: { id: utilisateur.activeTheme },
-      select: { metadata: true },
+  let themesAchetes: { id: string; nom: string; metadata: unknown }[] = [];
+  if (utilisateur?.purchasedItems?.length) {
+    const items = await db.boutiqueItem.findMany({
+      where: { id: { in: utilisateur.purchasedItems }, type: "theme", actif: true },
+      select: { id: true, nom: true, metadata: true },
     });
+    themesAchetes = items;
+  }
+  if (utilisateur?.activeTheme) {
+    const item = themesAchetes.find((t) => t.id === utilisateur.activeTheme)
+      ?? await db.boutiqueItem.findUnique({ where: { id: utilisateur.activeTheme }, select: { id: true, nom: true, metadata: true } });
     if (item) {
       const meta = item.metadata as Record<string, unknown>;
       if (meta && typeof meta.primary === "string") {
@@ -59,7 +65,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       "--color-background": themeCouleurs.background,
       "--color-text": themeCouleurs.text,
     } as React.CSSProperties : undefined}>
-      <NavBar estAdmin={utilisateur?.role === "ADMIN"} />
+      <NavBar estAdmin={utilisateur?.role === "ADMIN"} themesAchetes={themesAchetes} />
       <FournisseurMiamz repasSemaine={repasSemaine}>
         <div className="mx-auto max-w-5xl px-4 pb-24 py-6 sm:pb-6">{children}</div>
         <Compagnon accessoireEmoji={accessoireEmoji} accessoirePosition={accessoirePosition} />

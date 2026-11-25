@@ -116,19 +116,36 @@ function litCookieTheme(): string | null {
  * prochain rendu serveur) + data-theme immédiat (changement instantané,
  * sans rechargement), puis fermeture. Déclose au clic sur le fond.
  */
-function SelecteurTheme() {
+function SelecteurTheme({ themesAchetes = [] }: { themesAchetes?: { id: string; nom: string; metadata: unknown }[] }) {
   const [ouvert, setOuvert] = useState(false);
-  const [theme, setTheme] = useState<ThemeId>(THEME_DEFAUT);
+  const [theme, setTheme] = useState<string>(THEME_DEFAUT);
 
   // Lu une fois au montage : le serveur a déjà posé data-theme sur <html> ;
   // ici on aligne seulement la coche du popover (zéro décalage d'hydratation).
   useEffect(() => {
-    setTheme(themeDepuisValeur(litCookieTheme()));
+    const cookie = litCookieTheme();
+    setTheme(cookie || THEME_DEFAUT);
   }, []);
 
-  function choisir(id: ThemeId) {
+  function choisirBuiltin(id: ThemeId) {
     document.cookie = `miamz-theme=${id}; path=/; max-age=31536000; samesite=lax`;
+    // Reset boutique theme styles
+    document.documentElement.removeAttribute("style");
     document.documentElement.dataset.theme = id;
+    setTheme(id);
+    setOuvert(false);
+  }
+
+  function choisirBoutique(id: string, meta: Record<string, unknown>) {
+    document.cookie = `miamz-theme=${id}; path=/; max-age=31536000; samesite=lax`;
+    // Apply boutique theme colors as CSS variables
+    const style = document.documentElement.style;
+    if (typeof meta.primary === "string") style.setProperty("--color-primary", meta.primary as string);
+    if (typeof meta.secondary === "string") style.setProperty("--color-secondary", meta.secondary as string);
+    if (typeof meta.accent === "string") style.setProperty("--color-accent", meta.accent as string);
+    if (typeof meta.background === "string") style.setProperty("--color-background", meta.background as string);
+    if (typeof meta.text === "string") style.setProperty("--color-text", meta.text as string);
+    document.documentElement.dataset.theme = "boutique";
     setTheme(id);
     setOuvert(false);
   }
@@ -159,7 +176,7 @@ function SelecteurTheme() {
             <button
               key={t.id}
               type="button"
-              onClick={() => choisir(t.id)}
+              onClick={() => choisirBuiltin(t.id)}
               aria-current={theme === t.id ? "true" : undefined}
               className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-foreground transition ${
                 theme === t.id ? "bg-[#A8E6CF]/30" : "hover:bg-[#A8E6CF]/20"
@@ -173,13 +190,39 @@ function SelecteurTheme() {
               {t.label}
             </button>
           ))}
+          {themesAchetes.length > 0 && (
+            <>
+              <div className="my-1 border-t border-bordure" />
+              {themesAchetes.map((t) => {
+                const meta = t.metadata as Record<string, unknown>;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => choisirBoutique(t.id, meta)}
+                    aria-current={theme === t.id ? "true" : undefined}
+                    className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-foreground transition ${
+                      theme === t.id ? "bg-[#A8E6CF]/30" : "hover:bg-[#A8E6CF]/20"
+                    }`}
+                  >
+                    <span className="flex shrink-0 items-center gap-1">
+                      <span className="h-4 w-4 rounded-full border border-bordure" style={{ background: (meta.primary as string) ?? "#ccc" }} />
+                      <span className="h-4 w-4 rounded-full border border-bordure" style={{ background: (meta.accent as string) ?? "#ccc" }} />
+                      <span className="h-4 w-4 rounded-full border border-bordure" style={{ background: (meta.secondary as string) ?? "#ccc" }} />
+                    </span>
+                    {t.nom}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
       )}
     </>
   );
 }
 
-export default function NavBar({ estAdmin }: { estAdmin: boolean }) {
+export default function NavBar({ estAdmin, themesAchetes = [] }: { estAdmin: boolean; themesAchetes?: { id: string; nom: string; metadata: unknown }[] }) {
   const pathname = usePathname();
 
   return (
@@ -216,7 +259,7 @@ export default function NavBar({ estAdmin }: { estAdmin: boolean }) {
                 <Ibouclier className="h-4 w-4" /> Admin
               </Link>
             )}
-            <SelecteurTheme />
+            <SelecteurTheme themesAchetes={themesAchetes} />
             <button
               onClick={() => signOut({ callbackUrl: "/connexion" })}
               className="ml-2 rounded-full px-3 py-2 text-sm text-texte-tres-doux transition hover:bg-[#FFB5C2]/25 hover:text-danger"
@@ -236,7 +279,7 @@ export default function NavBar({ estAdmin }: { estAdmin: boolean }) {
                 <Ibouclier className="h-5 w-5" />
               </Link>
             )}
-            <SelecteurTheme />
+            <SelecteurTheme themesAchetes={themesAchetes} />
             <button
               onClick={() => signOut({ callbackUrl: "/connexion" })}
               aria-label="Se déconnecter"
