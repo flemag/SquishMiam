@@ -127,25 +127,68 @@ function SelecteurTheme({ themesAchetes = [] }: { themesAchetes?: { id: string; 
     setTheme(cookie || THEME_DEFAUT);
   }, []);
 
-  function choisirBuiltin(id: ThemeId) {
+  function choisirBoutique(id: string, meta: Record<string, unknown>) {
     document.cookie = `miamz-theme=${id}; path=/; max-age=31536000; samesite=lax`;
-    // Reset boutique theme styles
-    document.documentElement.removeAttribute("style");
-    document.documentElement.dataset.theme = id;
+    document.documentElement.dataset.boutiqueTheme = id;
+    document.documentElement.dataset.theme = "boutique";
+
+    // Inject CSS overrides for the boutique theme
+    const existingStyle = document.getElementById("boutique-theme-override");
+    if (existingStyle) existingStyle.remove();
+
+    const primary = (meta.primary as string) ?? "#4a6741";
+    const secondary = (meta.secondary as string) ?? "#a8e6cf";
+    const accent = (meta.accent as string) ?? "#e07a5f";
+    const background = (meta.background as string) ?? "#fff3d6";
+    const foreground = (meta.foreground as string) ?? "#3a2e2e";
+
+    const css = `
+      html[data-boutique-theme] body { background-color: ${background} !important; color: ${foreground} !important; }
+      html[data-boutique-theme] .text-\\[\\#4A6741\\] { color: ${primary} !important; }
+      html[data-boutique-theme] .bg-\\[\\#4A6741\\] { background-color: ${primary} !important; }
+      html[data-boutique-theme] .border-\\[\\#4A6741\\] { border-color: ${primary} !important; }
+      html[data-boutique-theme] .text-\\[\\#A8E6CF\\] { color: ${secondary} !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\] { background-color: ${secondary} !important; }
+      html[data-boutique-theme] .border-\\[\\#A8E6CF\\] { border-color: ${secondary} !important; }
+      html[data-boutique-theme] .text-\\[\\#3A2E2E\\] { color: ${foreground} !important; }
+      html[data-boutique-theme] .bg-\\[\\#FFF9E6\\] { background-color: ${background} !important; }
+      html[data-boutique-theme] .text-\\[\\#E07A5F\\] { color: ${accent} !important; }
+      html[data-boutique-theme] .bg-\\[\\#E07A5F\\] { background-color: ${accent} !important; }
+      html[data-boutique-theme] .border-\\[\\#E07A5F\\] { border-color: ${accent} !important; }
+      html[data-boutique-theme] .hover\\:bg-\\[\\#A8E6CF\\]\\/30:hover { background-color: ${secondary}4d !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/10 { background-color: ${secondary}1a !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/15 { background-color: ${secondary}26 !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/20 { background-color: ${secondary}33 !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/25 { background-color: ${secondary}40 !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/30 { background-color: ${secondary}4d !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/40 { background-color: ${secondary}66 !important; }
+      html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/50 { background-color: ${secondary}80 !important; }
+      html[data-boutique-theme] .bg-\\[\\#FFB5C2\\]\\/25 { background-color: ${accent}40 !important; }
+      html[data-boutique-theme] .bg-\\[\\#FFB5C2\\]\\/20 { background-color: ${accent}33 !important; }
+      html[data-boutique-theme] .text-\\[\\#8c2f3f\\] { color: ${accent} !important; }
+      html[data-boutique-theme] .text-\\[\\#2e5340\\] { color: ${primary} !important; }
+      html[data-boutique-theme] .text-\\[\\#43325e\\] { color: ${primary} !important; }
+      html[data-boutique-theme] .bg-\\[\\#C9B6E4\\]\\/20 { background-color: ${secondary}33 !important; }
+      html[data-boutique-theme] .text-\\[\\#8fb5a2\\] { color: ${secondary} !important; }
+      html[data-boutique-theme] .text-\\[\\#e0e0e0\\] { color: ${foreground} !important; }
+    `;
+
+    const styleEl = document.createElement("style");
+    styleEl.id = "boutique-theme-override";
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+
     setTheme(id);
     setOuvert(false);
   }
 
-  function choisirBoutique(id: string, meta: Record<string, unknown>) {
+  function choisirBuiltin(id: ThemeId) {
     document.cookie = `miamz-theme=${id}; path=/; max-age=31536000; samesite=lax`;
-    // Apply boutique theme colors as CSS variables
-    const style = document.documentElement.style;
-    if (typeof meta.primary === "string") style.setProperty("--color-primary", meta.primary as string);
-    if (typeof meta.secondary === "string") style.setProperty("--color-secondary", meta.secondary as string);
-    if (typeof meta.accent === "string") style.setProperty("--color-accent", meta.accent as string);
-    if (typeof meta.background === "string") style.setProperty("--color-background", meta.background as string);
-    if (typeof meta.text === "string") style.setProperty("--color-text", meta.text as string);
-    document.documentElement.dataset.theme = "boutique";
+    // Remove boutique theme override
+    const existingStyle = document.getElementById("boutique-theme-override");
+    if (existingStyle) existingStyle.remove();
+    document.documentElement.removeAttribute("data-boutique-theme");
+    document.documentElement.dataset.theme = id;
     setTheme(id);
     setOuvert(false);
   }
