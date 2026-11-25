@@ -33,6 +33,7 @@ export type BoutiquePageProps = {
   categories: CategorieVue[];
   articles: ArticleBoutique[];
   tokens: number;
+  purchasedItems: string[];
 };
 
 const REASONS = ["spam", "inapproprié", "autre"] as const;
@@ -55,7 +56,8 @@ const TYPE_ICONS: Record<string, string> = {
   pack: "📦",
 };
 
-export default function BoutiquePage({ recettes: initialRecettes, categories: initialCategories, articles: initialArticles, tokens: initialTokens }: BoutiquePageProps) {
+export default function BoutiquePage({ recettes: initialRecettes, categories: initialCategories, articles: initialArticles, tokens: initialTokens, purchasedItems: initialPurchased }: BoutiquePageProps) {
+  const purchasedItems = initialPurchased;
   const { data: session } = useSession();
   const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const router = useRouter();
@@ -513,14 +515,20 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
                     <span className="text-sm font-medium text-[#4A6741]">
                       {a.prix === 0 ? "Gratuit" : `${a.prix} jetons`}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => acheter(a.id)}
-                      disabled={achatEnCours === a.id}
-                      className="bouton min-h-9 px-3 text-sm"
-                    >
-                      {achatEnCours === a.id ? "Achat…" : "Acheter"}
-                    </button>
+                    {purchasedItems.includes(a.id) ? (
+                      <span className="rounded-full bg-[#A8E6CF]/30 px-3 py-1 text-xs font-medium text-[#2e5340]">
+                        ✓ Possédé
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => acheter(a.id)}
+                        disabled={achatEnCours === a.id}
+                        className="bouton min-h-9 px-3 text-sm"
+                      >
+                        {achatEnCours === a.id ? "Achat…" : "Acheter"}
+                      </button>
+                    )}
                   </div>
                 </article>
               ))

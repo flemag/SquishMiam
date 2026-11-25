@@ -37,14 +37,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   // Charger le thème actif (couleurs) + thèmes achetés pour le sélecteur
-  let themeCouleurs: Record<string, string> | null = null;
-  let themesAchetes: { id: string; nom: string; metadata: unknown }[] = [];
+  let themeActif: { id: string; metadata: Record<string, unknown> } | null = null;
+  let themesAchetes: { id: string; nom: string; metadata: Record<string, unknown> }[] = [];
   if (utilisateur?.purchasedItems?.length) {
     const items = await db.boutiqueItem.findMany({
       where: { id: { in: utilisateur.purchasedItems }, type: "theme", actif: true },
       select: { id: true, nom: true, metadata: true },
     });
-    themesAchetes = items;
+    themesAchetes = items as { id: string; nom: string; metadata: Record<string, unknown> }[];
   }
   if (utilisateur?.activeTheme) {
     const item = themesAchetes.find((t) => t.id === utilisateur.activeTheme)
@@ -52,60 +52,74 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (item) {
       const meta = item.metadata as Record<string, unknown>;
       if (meta && typeof meta.primary === "string") {
-        themeCouleurs = meta as Record<string, string>;
+        themeActif = { id: item.id, metadata: meta as Record<string, unknown> };
       }
     }
   }
 
   // Générer les overrides CSS pour le thème boutique actif
-  const themeCss = themeCouleurs ? `
+  const themeCss = themeActif ? `
     :root {
-      --theme-primary: ${themeCouleurs.primary};
-      --theme-secondary: ${themeCouleurs.secondary};
-      --theme-accent: ${themeCouleurs.accent};
-      --theme-background: ${themeCouleurs.background};
-      --theme-text: ${themeCouleurs.text};
+      --color-primary: ${themeActif.metadata.primary};
+      --color-primary-hover: ${themeActif.metadata.primaryHover ?? themeActif.metadata.primary};
+      --color-primary-light: ${themeActif.metadata.primaryLight ?? themeActif.metadata.primary};
+      --color-secondary: ${themeActif.metadata.secondary};
+      --color-secondary-hover: ${themeActif.metadata.secondaryHover ?? themeActif.metadata.secondary};
+      --color-accent: ${themeActif.metadata.accent};
+      --color-accent-hover: ${themeActif.metadata.accentHover ?? themeActif.metadata.accent};
+      --color-background: ${themeActif.metadata.background};
+      --color-surface: ${themeActif.metadata.surface ?? "#ffffff"};
+      --color-surface-elevated: ${themeActif.metadata.surfaceElevated ?? themeActif.metadata.background};
+      --color-foreground: ${themeActif.metadata.foreground ?? "#3a2e2e"};
+      --color-foreground-muted: ${themeActif.metadata.foregroundMuted ?? "rgba(58,46,46,0.64)"};
+      --color-foreground-subtle: ${themeActif.metadata.foregroundSubtle ?? "rgba(58,46,46,0.45)"};
+      --color-border: ${themeActif.metadata.border ?? "rgba(58,46,46,0.12)"};
+      --color-danger: ${themeActif.metadata.danger ?? "#b0413e"};
+      --color-danger-hover: ${themeActif.metadata.dangerHover ?? "#9a3533"};
     }
-    body { background-color: ${themeCouleurs.background} !important; color: ${themeCouleurs.text} !important; }
-    .text-\\[\\#4A6741\\] { color: ${themeCouleurs.primary} !important; }
-    .bg-\\[\\#4A6741\\] { background-color: ${themeCouleurs.primary} !important; }
-    .border-\\[\\#4A6741\\] { border-color: ${themeCouleurs.primary} !important; }
-    .text-\\[\\#A8E6CF\\] { color: ${themeCouleurs.secondary} !important; }
-    .bg-\\[\\#A8E6CF\\] { background-color: ${themeCouleurs.secondary} !important; }
-    .border-\\[\\#A8E6CF\\] { border-color: ${themeCouleurs.secondary} !important; }
-    .text-\\[\\#3A2E2E\\] { color: ${themeCouleurs.text} !important; }
-    .bg-\\[\\#FFF9E6\\] { background-color: ${themeCouleurs.background} !important; }
-    .text-\\[\\#E07A5F\\] { color: ${themeCouleurs.accent} !important; }
-    .bg-\\[\\#E07A5F\\] { background-color: ${themeCouleurs.accent} !important; }
-    .border-\\[\\#E07A5F\\] { border-color: ${themeCouleurs.accent} !important; }
-    .hover\\:bg-\\[\\#A8E6CF\\]\\/30:hover { background-color: ${themeCouleurs.secondary}4d !important; }
-    .bg-\\[\\#A8E6CF\\]\\/10 { background-color: ${themeCouleurs.secondary}1a !important; }
-    .bg-\\[\\#A8E6CF\\]\\/15 { background-color: ${themeCouleurs.secondary}26 !important; }
-    .bg-\\[\\#A8E6CF\\]\\/20 { background-color: ${themeCouleurs.secondary}33 !important; }
-    .bg-\\[\\#A8E6CF\\]\\/25 { background-color: ${themeCouleurs.secondary}40 !important; }
-    .bg-\\[\\#A8E6CF\\]\\/30 { background-color: ${themeCouleurs.secondary}4d !important; }
-    .bg-\\[\\#A8E6CF\\]\\/40 { background-color: ${themeCouleurs.secondary}66 !important; }
-    .bg-\\[\\#A8E6CF\\]\\/50 { background-color: ${themeCouleurs.secondary}80 !important; }
-    .bg-\\[\\#FFB5C2\\]\\/25 { background-color: ${themeCouleurs.accent}40 !important; }
-    .bg-\\[\\#FFB5C2\\]\\/20 { background-color: ${themeCouleurs.accent}33 !important; }
-    .text-\\[\\#8c2f3f\\] { color: ${themeCouleurs.accent} !important; }
-    .text-\\[\\#2e5340\\] { color: ${themeCouleurs.primary} !important; }
-    .text-\\[\\#43325e\\] { color: ${themeCouleurs.primary} !important; }
-    .bg-\\[\\#C9B6E4\\]\\/20 { background-color: ${themeCouleurs.secondary}33 !important; }
-    .text-\\[\\#8fb5a2\\] { color: ${themeCouleurs.secondary} !important; }
-    .text-\\[\\#e0e0e0\\] { color: ${themeCouleurs.text} !important; }
+    html[data-boutique-theme] body { background-color: ${themeActif.metadata.background} !important; color: ${themeActif.metadata.foreground ?? "#3a2e2e"} !important; }
+    html[data-boutique-theme] .text-\\[\\#4A6741\\] { color: ${themeActif.metadata.primary} !important; }
+    html[data-boutique-theme] .bg-\\[\\#4A6741\\] { background-color: ${themeActif.metadata.primary} !important; }
+    html[data-boutique-theme] .border-\\[\\#4A6741\\] { border-color: ${themeActif.metadata.primary} !important; }
+    html[data-boutique-theme] .text-\\[\\#A8E6CF\\] { color: ${themeActif.metadata.secondary} !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\] { background-color: ${themeActif.metadata.secondary} !important; }
+    html[data-boutique-theme] .border-\\[\\#A8E6CF\\] { border-color: ${themeActif.metadata.secondary} !important; }
+    html[data-boutique-theme] .text-\\[\\#3A2E2E\\] { color: ${themeActif.metadata.foreground ?? "#3a2e2e"} !important; }
+    html[data-boutique-theme] .bg-\\[\\#FFF9E6\\] { background-color: ${themeActif.metadata.background} !important; }
+    html[data-boutique-theme] .text-\\[\\#E07A5F\\] { color: ${themeActif.metadata.accent} !important; }
+    html[data-boutique-theme] .bg-\\[\\#E07A5F\\] { background-color: ${themeActif.metadata.accent} !important; }
+    html[data-boutique-theme] .border-\\[\\#E07A5F\\] { border-color: ${themeActif.metadata.accent} !important; }
+    html[data-boutique-theme] .hover\\:bg-\\[\\#A8E6CF\\]\\/30:hover { background-color: ${themeActif.metadata.secondary}4d !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/10 { background-color: ${themeActif.metadata.secondary}1a !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/15 { background-color: ${themeActif.metadata.secondary}26 !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/20 { background-color: ${themeActif.metadata.secondary}33 !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/25 { background-color: ${themeActif.metadata.secondary}40 !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/30 { background-color: ${themeActif.metadata.secondary}4d !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/40 { background-color: ${themeActif.metadata.secondary}66 !important; }
+    html[data-boutique-theme] .bg-\\[\\#A8E6CF\\]\\/50 { background-color: ${themeActif.metadata.secondary}80 !important; }
+    html[data-boutique-theme] .bg-\\[\\#FFB5C2\\]\\/25 { background-color: ${themeActif.metadata.accent}40 !important; }
+    html[data-boutique-theme] .bg-\\[\\#FFB5C2\\]\\/20 { background-color: ${themeActif.metadata.accent}33 !important; }
+    html[data-boutique-theme] .text-\\[\\#8c2f3f\\] { color: ${themeActif.metadata.accent} !important; }
+    html[data-boutique-theme] .text-\\[\\#2e5340\\] { color: ${themeActif.metadata.primary} !important; }
+    html[data-boutique-theme] .text-\\[\\#43325e\\] { color: ${themeActif.metadata.primary} !important; }
+    html[data-boutique-theme] .bg-\\[\\#C9B6E4\\]\\/20 { background-color: ${themeActif.metadata.secondary}33 !important; }
+    html[data-boutique-theme] .text-\\[\\#8fb5a2\\] { color: ${themeActif.metadata.secondary} !important; }
+    html[data-boutique-theme] .text-\\[\\#e0e0e0\\] { color: ${themeActif.metadata.foreground ?? "#3a2e2e"} !important; }
   ` : "";
 
   return (
     <>
-      {themeCouleurs && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
-      <div className="min-h-screen">
-        <NavBar estAdmin={utilisateur?.role === "ADMIN"} themesAchetes={themesAchetes} />
-        <FournisseurMiamz repasSemaine={repasSemaine}>
-          <div className="mx-auto max-w-5xl px-4 pb-24 py-6 sm:pb-6">{children}</div>
-          <Compagnon accessoireEmoji={accessoireEmoji} accessoirePosition={accessoirePosition} />
-        </FournisseurMiamz>
-      </div>
+      {themeActif && <style dangerouslySetInnerHTML={{ __html: themeCss }} />}
+      <html data-boutique-theme={themeActif?.id ?? ""} lang="fr">
+        <head />
+        <body className="min-h-screen">
+          <NavBar estAdmin={utilisateur?.role === "ADMIN"} themesAchetes={themesAchetes} />
+          <FournisseurMiamz repasSemaine={repasSemaine}>
+            <div className="mx-auto max-w-5xl px-4 pb-24 py-6 sm:pb-6">{children}</div>
+            <Compagnon accessoireEmoji={accessoireEmoji} accessoirePosition={accessoirePosition} />
+          </FournisseurMiamz>
+        </body>
+      </html>
     </>
   );
 }

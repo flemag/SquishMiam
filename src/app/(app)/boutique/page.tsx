@@ -37,7 +37,7 @@ export default async function BoutiquePage() {
       where: { actif: true },
       orderBy: { createdAt: "desc" },
     }),
-    db.user.findUnique({ where: { id: userId }, select: { tokens: true } }),
+    db.user.findUnique({ where: { id: userId }, select: { tokens: true, purchasedItems: true } }),
   ]);
 
   // Convertir publishedAt en string ISO
@@ -64,6 +64,7 @@ export default async function BoutiquePage() {
         recettes={recettesWithStringDate}
         articles={articlesVue}
         tokens={user?.tokens ?? 0}
+        purchasedItems={user?.purchasedItems ?? []}
       />
     </main>
   );

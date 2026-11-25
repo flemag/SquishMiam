@@ -5,18 +5,34 @@
  * Utilise ces variables plutôt que des valeurs brutes.
  */
 :root {
+  /* Couleurs de base Miamz */
   --miamz-rose: #ffb5c2;
   --miamz-menthe: #a8e6cf;
   --miamz-lilas: #c9b6e4;
   --miamz-vert: #4a6741;
   --miamz-corail: #e07a5f;
 
-  /*
-   * Thème par défaut : « manga » (spec 2d). Les autres thèmes surrisent
-   * via html[data-theme="…"] — voir le tableau des palettes dans la spec.
-   */
+  /* Thème par défaut : « manga » (spec 2d). */
   --background: #fff3d6;
   --foreground: #3a2e2e;
+
+  /* Couleurs sémantiques du thème (utilisées par les composants) */
+  --color-primary: #4a6741;
+  --color-primary-hover: #3a5533;
+  --color-primary-light: #a8e6cf;
+  --color-secondary: #a8e6cf;
+  --color-secondary-hover: #8fd6b4;
+  --color-accent: #e07a5f;
+  --color-accent-hover: #c96a52;
+  --color-background: #fff3d6;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #fff9e6;
+  --color-foreground: #3a2e2e;
+  --color-foreground-muted: rgba(58, 46, 46, 0.64);
+  --color-foreground-subtle: rgba(58, 46, 46, 0.45);
+  --color-border: rgba(58, 46, 46, 0.12);
+  --color-danger: #b0413e;
+  --color-danger-hover: #9a3533;
 
   /* Fond de scène + voile des barres + opacité des doodles. */
   --fond-scene: #fff3d6;
@@ -57,6 +73,24 @@
 /* Thème « doux » — Nappe & confiture. */
 html[data-theme="doux"] {
   --background: #fff9e6;
+  --foreground: #3a2e2e;
+  --color-primary: #4a6741;
+  --color-primary-hover: #3a5533;
+  --color-primary-light: #a8e6cf;
+  --color-secondary: #a8e6cf;
+  --color-secondary-hover: #8fd6b4;
+  --color-accent: #e07a5f;
+  --color-accent-hover: #c96a52;
+  --color-background: #fff9e6;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #fff3d6;
+  --color-foreground: #3a2e2e;
+  --color-foreground-muted: rgba(58, 46, 46, 0.64);
+  --color-foreground-subtle: rgba(58, 46, 46, 0.45);
+  --color-border: rgba(58, 46, 46, 0.12);
+  --color-danger: #b0413e;
+  --color-danger-hover: #9a3533;
+
   --fond-scene: linear-gradient(160deg, #fff9e6 0%, #ffedf1 55%, #fbe3ec 100%);
   --fond-voile: rgba(255, 249, 230, 0.92);
   --opacite-doodles: 0.08;
@@ -82,6 +116,24 @@ html[data-theme="doux"] {
 /* Thème « pique-nique » — vichy rose chaleureux. */
 html[data-theme="pique-nique"] {
   --background: #fff7ea;
+  --foreground: #3a2e2e;
+  --color-primary: #e07a5f;
+  --color-primary-hover: #c96a51;
+  --color-primary-light: #ffb5c2;
+  --color-secondary: #ffb5c2;
+  --color-secondary-hover: #ffcdd6;
+  --color-accent: #4a6741;
+  --color-accent-hover: #3a5533;
+  --color-background: #fff7ea;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #fff3d6;
+  --color-foreground: #3a2e2e;
+  --color-foreground-muted: rgba(58, 46, 46, 0.64);
+  --color-foreground-subtle: rgba(58, 46, 46, 0.45);
+  --color-border: rgba(58, 46, 46, 0.12);
+  --color-danger: #b0413e;
+  --color-danger-hover: #9a3533;
+
   --fond-scene: repeating-linear-gradient(0deg, rgba(255, 181, 194, 0.2) 0 18px, transparent 18px 36px),
     repeating-linear-gradient(90deg, rgba(255, 181, 194, 0.2) 0 18px, transparent 18px 36px), #fff7ea;
   --fond-voile: rgba(255, 247, 234, 0.92);
@@ -106,8 +158,26 @@ html[data-theme="pique-nique"] {
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Couleurs sémantiques du thème (utilisent les variables CSS du thème actif) */
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-hover: var(--color-secondary-hover);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-surface: var(--color-surface);
+  --color-surface-elevated: var(--color-surface-elevated);
+  --color-foreground: var(--color-foreground);
+  --color-foreground-muted: var(--color-foreground-muted);
+  --color-foreground-subtle: var(--color-foreground-subtle);
+  --color-border: var(--color-border);
+  --color-danger: var(--color-danger);
+  --color-danger-hover: var(--color-danger-hover);
+
+  /* Couleurs Miamz (pour compatibilité) */
   --color-miamz-rose: var(--miamz-rose);
   --color-miamz-menthe: var(--miamz-menthe);
   --color-miamz-lilas: var(--miamz-lilas);
@@ -116,9 +186,29 @@ html[data-theme="pique-nique"] {
   --color-texte-doux: var(--texte-doux);
   --color-texte-tres-doux: var(--texte-tres-doux);
   --color-bordure: var(--bordure);
-  --color-danger: var(--danger);
+  --color-danger-legacy: var(--danger);
   --color-fond-voile: var(--fond-voile);
   --font-sans: var(--font-fredoka), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Thème boutique — appliqué quand data-boutique-theme est présent */
+html[data-boutique-theme] {
+  --color-primary: var(--boutique-primary);
+  --color-primary-hover: var(--boutique-primary-hover);
+  --color-primary-light: var(--boutique-primary-light);
+  --color-secondary: var(--boutique-secondary);
+  --color-secondary-hover: var(--boutique-secondary-hover);
+  --color-accent: var(--boutique-accent);
+  --color-accent-hover: var(--boutique-accent-hover);
+  --color-background: var(--boutique-background);
+  --color-surface: var(--boutique-surface);
+  --color-surface-elevated: var(--boutique-surface-elevated);
+  --color-foreground: var(--boutique-foreground);
+  --color-foreground-muted: var(--boutique-foreground-muted);
+  --color-foreground-subtle: var(--boutique-foreground-subtle);
+  --color-border: var(--boutique-border);
+  --color-danger: var(--boutique-danger);
+  --color-danger-hover: var(--boutique-danger-hover);
 }
 
 body {
