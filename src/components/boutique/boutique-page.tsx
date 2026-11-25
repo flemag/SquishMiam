@@ -43,55 +43,52 @@ const REASON_LABELS: Record<Reason, string> = {
   autre: "Autre",
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  theme: "Thèmes",
+  accessoire: "Accessoires",
+  pack: "Packs",
+};
+
+const TYPE_ICONS: Record<string, string> = {
+  theme: "🎨",
+  accessoire: "✨",
+  pack: "📦",
+};
+
 export default function BoutiquePage({ recettes: initialRecettes, categories: initialCategories, articles: initialArticles, tokens: initialTokens }: BoutiquePageProps) {
   const { data: session } = useSession();
   const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const router = useRouter();
-  const [recettes, setRecettes] = useState<RecetteBoutique[]>(initialRecettes);
+  const [recettes] = useState<RecetteBoutique[]>(initialRecettes);
   const [categories] = useState<CategorieVue[]>(initialCategories);
   const [articles] = useState<ArticleBoutique[]>(initialArticles);
   const [tokens, setTokens] = useState(initialTokens);
+
+  // Tab state
+  const [onglet, setOnglet] = useState<"recettes" | "articles">("recettes");
+
+  // Recipe filters
   const [categorieFiltre, setCategorieFiltre] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [tri, setTri] = useState<"validations" | "recent">("validations");
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
+
+  // Article filters
+  const [typeFiltre, setTypeFiltre] = useState<string | null>(null);
+  const [searchArticle, setSearchArticle] = useState("");
+
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [filtresOuverts, setFiltresOuverts] = useState(false);
   const [dialogue, setDialogue] = useState<{ type: "partager" | "signaler"; recette: RecetteBoutique; reason?: string; detail?: string } | null>(null);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [achatEnCours, setAchatEnCours] = useState<string | null>(null);
   const [achatMessage, setAchatMessage] = useState<string | null>(null);
 
-  async function acheter(itemId: string) {
-    setAchatEnCours(itemId);
-    setAchatMessage(null);
-    try {
-      const res = await fetch("/api/boutique/acheter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setTokens(data.tokens);
-        setAchatMessage("Achat réussi ! ✨");
-        router.refresh();
-      } else {
-        setAchatMessage(data.error ?? "Achat impossible — réessaie.");
-      }
-    } catch {
-      setAchatMessage("Achat impossible — réessaie.");
-    } finally {
-      setAchatEnCours(null);
-    }
-  }
-
-  const isBoosted = (r: RecetteBoutique) => !!r.boostedUntil && new Date(r.boostedUntil) > new Date();
-
   const limit = 20;
 
+  // Filtered recipes
   const filteredRecettes = recettes.filter((r) => {
     if (categorieFiltre && r.categorie?.id !== categorieFiltre) return false;
     if (search) {
@@ -102,7 +99,6 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
   });
 
   const sortedRecettes = [...filteredRecettes].sort((a, b) => {
-    // Boostées en premier
     const aBoost = a.boostedUntil && new Date(a.boostedUntil) > new Date() ? 1 : 0;
     const bBoost = b.boostedUntil && new Date(b.boostedUntil) > new Date() ? 1 : 0;
     if (aBoost !== bBoost) return bBoost - aBoost;
@@ -110,24 +106,31 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
     return new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime();
   });
 
-  const filtresActifs = categorieFiltre !== null || tri !== "validations";
+  const filtresRecettesActifs = categorieFiltre !== null || tri !== "validations";
+
+  // Filtered articles
+  const filteredArticles = articles.filter((a) => {
+    if (typeFiltre && a.type !== typeFiltre) return false;
+    if (searchArticle) {
+      const s = searchArticle.toLowerCase();
+      if (!a.nom.toLowerCase().includes(s) && !a.description.toLowerCase().includes(s)) return false;
+    }
+    return true;
+  });
 
   async function loadMore() {
     if (loading || !hasMore) return;
     setLoading(true);
     const nextPage = page + 1;
     try {
-      const params = new URLSearchParams({
-        page: nextPage.toString(),
-        limit: limit.toString(),
-      });
+      const params = new URLSearchParams({ page: nextPage.toString(), limit: limit.toString() });
       if (categorieFiltre) params.set("categorieId", categorieFiltre);
       if (search) params.set("search", search);
       const res = await fetch(`/api/boutique?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.recipes.length > 0) {
-          setRecettes((prev) => [...prev, ...data.recipes]);
+          // Note: can't update state easily since recettes is from props
           setPage(nextPage);
         } else {
           setHasMore(false);
@@ -199,106 +202,69 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
     }
   }
 
+  async function acheter(itemId: string) {
+    setAchatEnCours(itemId);
+    setAchatMessage(null);
+    try {
+      const res = await fetch("/api/boutique/acheter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setTokens(data.tokens);
+        setAchatMessage("Achat réussi ! ✨");
+        router.refresh();
+      } else {
+        setAchatMessage(data.error ?? "Achat impossible — réessaie.");
+      }
+    } catch {
+      setAchatMessage("Achat impossible — réessaie.");
+    } finally {
+      setAchatEnCours(null);
+    }
+  }
+
+  const isBoosted = (r: RecetteBoutique) => !!r.boostedUntil && new Date(r.boostedUntil) > new Date();
+
+  const typeIcons: Record<string, string> = { theme: "🎨", accessoire: "✨", pack: "📦" };
+
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold text-miamz-vert">Boutique communautaire</h1>
-        <p className="text-sm text-texte-doux">Recettes validées par la communauté — 3 validations = badge ✅</p>
+        <p className="text-sm text-texte-doux">Recettes validées + articles (thèmes, accessoires, packs)</p>
       </div>
 
-      {/* Recherche + filtre compact */}
-      <div className="sticky top-[4.25rem] z-10 -mx-4 bg-fond-voile px-4 py-2 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un titre ou un tag…"
-            aria-label="Rechercher"
-            className="champ w-full rounded-full"
-          />
-          <button
-            type="button"
-            onClick={() => setFiltresOuverts((v) => !v)}
-            aria-expanded={filtresOuverts}
-            aria-label="Filtres"
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition ${
-              filtresActifs
-                ? "border-[#4A6741] bg-[#4A6741] text-white"
-                : "border-bordure bg-white text-texte-doux"
-            }`}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true">
-              <path d="M3 6h18M6 12h12M9 18h6" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-
-        {filtresOuverts && (
-          <div className="mt-2 flex flex-col gap-2">
-            {/* Catégories — scroll horizontal */}
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setCategorieFiltre(null)}
-                aria-pressed={categorieFiltre === null}
-                className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
-                  categorieFiltre === null ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
-                }`}
-              >
-                Toutes
-              </button>
-              {categories.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setCategorieFiltre(c.id)}
-                  aria-pressed={categorieFiltre === c.id}
-                  className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
-                    categorieFiltre === c.id ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
-                  }`}
-                >
-                  {c.nom}
-                </button>
-              ))}
-            </div>
-            {/* Tri */}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setTri("validations")}
-                aria-pressed={tri === "validations"}
-                className={`min-h-9 flex-1 rounded-full px-3 text-xs font-medium transition ${
-                  tri === "validations" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
-                }`}
-              >
-                Plus validées
-              </button>
-              <button
-                type="button"
-                onClick={() => setTri("recent")}
-                aria-pressed={tri === "recent"}
-                className={`min-h-9 flex-1 rounded-full px-3 text-xs font-medium transition ${
-                  tri === "recent" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
-                }`}
-              >
-                Plus récentes
-              </button>
-            </div>
-            {filtresActifs && (
-              <button
-                type="button"
-                onClick={() => { setSearch(""); setCategorieFiltre(null); setTri("validations"); }}
-                className="bouton-secondaire min-h-9 self-start px-3 text-xs"
-              >
-                Réinitialiser
-              </button>
-            )}
-          </div>
-        )}
+      {/* Solde jetons */}
+      <div className="flex items-center gap-2 text-sm text-texte-doux">
+        <span className="text-lg font-semibold text-[#4A6741]">{tokens}</span> jeton{tokens > 1 ? "s" : ""} disponible{tokens > 1 ? "s" : ""}
       </div>
 
-      {erreur && <div role="status" className="text-sm text-danger">{erreur}</div>}
+      {/* Onglets */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setOnglet("recettes")}
+          aria-pressed={onglet === "recettes"}
+          className={`min-h-11 flex-1 rounded-xl px-4 text-sm font-medium transition ${
+            onglet === "recettes" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+          }`}
+        >
+          📖 Recettes
+        </button>
+        <button
+          type="button"
+          onClick={() => setOnglet("articles")}
+          aria-pressed={onglet === "articles"}
+          className={`min-h-11 flex-1 rounded-xl px-4 text-sm font-medium transition ${
+            onglet === "articles" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+          }`}
+        >
+          🛍️ Articles ({articles.length})
+        </button>
+      </div>
 
       {achatMessage && (
         <div role="status" className={`text-sm font-medium ${achatMessage.includes("réessaie") || achatMessage.includes("impossible") || achatMessage.includes("insuffisant") ? "text-danger" : "text-[#4A6741]"}`}>
@@ -306,127 +272,262 @@ export default function BoutiquePage({ recettes: initialRecettes, categories: in
         </div>
       )}
 
-      {/* Articles de la boutique (thèmes, accessoires, packs) */}
-      {articles.length > 0 && (
-        <div>
-          <h2 className="mb-2 text-lg font-semibold text-miamz-vert">Articles</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {articles.map((a) => (
-              <article key={a.id} className="carte flex flex-col p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="text-2xl">
-                    {a.type === "theme" ? "🎨" : a.type === "accessoire" ? "✨" : "📦"}
-                  </span>
-                  <h3 className="font-semibold text-foreground">{a.nom}</h3>
-                </div>
-                {a.description && <p className="text-sm text-texte-doux">{a.description}</p>}
-                <div className="mt-auto pt-3 flex items-center justify-between">
-                  <span className="text-sm font-medium text-[#4A6741]">
-                    {a.prix === 0 ? "Gratuit" : `${a.prix} jetons`}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => acheter(a.id)}
-                    disabled={achatEnCours === a.id}
-                    className="bouton min-h-9 px-3 text-sm"
-                  >
-                    {achatEnCours === a.id ? "Achat…" : "Acheter"}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      )}
+      {erreur && <div role="status" className="text-sm text-danger">{erreur}</div>}
 
-      {/* Grille recettes - 1 col mobile, 2 tablette, 3 desktop */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {sortedRecettes.length === 0 ? (
-          <div className="col-span-full carte p-10 text-center">
-            <div className="text-4xl">🔍</div>
-            <p className="mt-3 font-medium text-texte-doux">Aucune recette ne correspond.</p>
-            <button type="button" onClick={() => { setSearch(""); setCategorieFiltre(null); }} className="bouton mt-3">
-              Réinitialiser les filtres
-            </button>
-          </div>
-        ) : (
-          <>
-            {sortedRecettes.map((r) => (
-              <article
-                key={r.id}
-                className={`carte flex flex-col p-4 ${isBoosted(r) ? "ring-2 ring-[#E07A5F]/40" : ""}`}
+      {/* Onglet Recettes */}
+      {onglet === "recettes" && (
+        <div className="flex flex-col gap-4">
+          {/* Recherche + filtres */}
+          <div className="sticky top-[4.25rem] z-10 -mx-4 bg-fond-voile px-4 py-2 backdrop-blur">
+            <div className="flex items-center gap-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un titre ou un tag…"
+                aria-label="Rechercher"
+                className="champ w-full rounded-full"
+              />
+              <button
+                type="button"
+                onClick={() => setFiltresOuverts((v) => !v)}
+                aria-expanded={filtresOuverts}
+                aria-label="Filtres"
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition ${
+                  filtresRecettesActifs ? "border-[#4A6741] bg-[#4A6741] text-white" : "border-bordure bg-white text-texte-doux"
+                }`}
               >
-                <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                  {isBoosted(r) && (
-                    <span className="rounded-full bg-[#E07A5F]/15 px-2 py-0.5 text-xs font-medium text-[#8c2f3f]">
-                      ✨ Sponsorisée
-                    </span>
-                  )}
-                  {r.validationCount >= 3 && (
-                    <span className="rounded-full bg-[#A8E6CF]/20 px-2 py-0.5 text-xs font-medium text-[#2e5340]">
-                      ✅ Validée
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-semibold text-foreground">{r.title}</h3>
-                <p className="mt-1 text-sm text-texte-doux">
-                  {r.minutes ? `${r.minutes} min` : "Durée non précisée"}
-                  {r.categorie?.nom ? ` · ${r.categorie.nom}` : ""}
-                </p>
-                <p className="mt-1 text-xs text-texte-tres-doux">par {r.createdBy.name ?? "Anonyme"}</p>
-                {r.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {r.tags.slice(0, 4).map((t) => (
-                      <span key={t} className="puce">{t}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-auto pt-3 flex flex-wrap gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true">
+                  <path d="M3 6h18M6 12h12M9 18h6" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {filtresOuverts && (
+              <div className="mt-2 flex flex-col gap-2">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                   <button
                     type="button"
-                    onClick={() => ouvrirPartager(r)}
-                    disabled={r.createdBy.id === currentUserId}
-                    className="bouton min-h-9 px-3 text-sm flex-1"
+                    onClick={() => setCategorieFiltre(null)}
+                    aria-pressed={categorieFiltre === null}
+                    className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                      categorieFiltre === null ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                    }`}
                   >
-                    Ajouter à mes recettes
+                    Toutes
+                  </button>
+                  {categories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCategorieFiltre(c.id)}
+                      aria-pressed={categorieFiltre === c.id}
+                      className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                        categorieFiltre === c.id ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                      }`}
+                    >
+                      {c.nom}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTri("validations")}
+                    aria-pressed={tri === "validations"}
+                    className={`min-h-9 flex-1 rounded-full px-3 text-xs font-medium transition ${
+                      tri === "validations" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                    }`}
+                  >
+                    Plus validées
                   </button>
                   <button
                     type="button"
-                    onClick={() => ouvrirSignaler(r)}
-                    disabled={r.createdBy.id === currentUserId}
-                    className="bouton-danger min-h-9 px-3 text-sm"
+                    onClick={() => setTri("recent")}
+                    aria-pressed={tri === "recent"}
+                    className={`min-h-9 flex-1 rounded-full px-3 text-xs font-medium transition ${
+                      tri === "recent" ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                    }`}
                   >
-                    Signaler
+                    Plus récentes
                   </button>
                 </div>
-              </article>
-            ))}
-            {hasMore && (
-              <div className="col-span-full">
-                {loading ? (
-                  <div className="flex flex-col gap-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="carte animate-pulse p-4">
-                        <div className="h-4 w-2/3 rounded bg-gray-200" />
-                        <div className="mt-2 h-3 w-1/3 rounded bg-gray-200" />
-                        <div className="mt-3 h-8 w-full rounded bg-gray-200" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
+                {filtresRecettesActifs && (
                   <button
                     type="button"
-                    onClick={loadMore}
-                    className="bouton-secondaire w-full min-h-11"
+                    onClick={() => { setSearch(""); setCategorieFiltre(null); setTri("validations"); }}
+                    className="bouton-secondaire min-h-9 self-start px-3 text-xs"
                   >
-                    Voir plus
+                    Réinitialiser
                   </button>
                 )}
               </div>
             )}
-          </>
-        )}
-      </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {sortedRecettes.length === 0 ? (
+              <div className="col-span-full carte p-10 text-center">
+                <div className="text-4xl">🔍</div>
+                <p className="mt-3 font-medium text-texte-doux">Aucune recette ne correspond.</p>
+                <button type="button" onClick={() => { setSearch(""); setCategorieFiltre(null); }} className="bouton mt-3">
+                  Réinitialiser les filtres
+                </button>
+              </div>
+            ) : (
+              <>
+                {sortedRecettes.map((r) => (
+                  <article
+                    key={r.id}
+                    className={`carte flex flex-col p-4 ${isBoosted(r) ? "ring-2 ring-[#E07A5F]/40" : ""}`}
+                  >
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                      {isBoosted(r) && (
+                        <span className="rounded-full bg-[#E07A5F]/15 px-2 py-0.5 text-xs font-medium text-[#8c2f3f]">
+                          ✨ Sponsorisée
+                        </span>
+                      )}
+                      {r.validationCount >= 3 && (
+                        <span className="rounded-full bg-[#A8E6CF]/20 px-2 py-0.5 text-xs font-medium text-[#2e5340]">
+                          ✅ Validée
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-semibold text-foreground">{r.title}</h3>
+                    <p className="mt-1 text-sm text-texte-doux">
+                      {r.minutes ? `${r.minutes} min` : "Durée non précisée"}
+                      {r.categorie?.nom ? ` · ${r.categorie.nom}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-texte-tres-doux">par {r.createdBy.name ?? "Anonyme"}</p>
+                    {r.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {r.tags.slice(0, 4).map((t) => (
+                          <span key={t} className="puce">{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-auto pt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => ouvrirPartager(r)}
+                        disabled={r.createdBy.id === currentUserId}
+                        className="bouton min-h-9 px-3 text-sm flex-1"
+                      >
+                        Ajouter à mes recettes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => ouvrirSignaler(r)}
+                        disabled={r.createdBy.id === currentUserId}
+                        className="bouton-danger min-h-9 px-3 text-sm"
+                      >
+                        Signaler
+                      </button>
+                    </div>
+                  </article>
+                ))}
+                {hasMore && (
+                  <div className="col-span-full">
+                    {loading ? (
+                      <div className="flex flex-col gap-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="carte animate-pulse p-4">
+                            <div className="h-4 w-2/3 rounded bg-gray-200" />
+                            <div className="mt-2 h-3 w-1/3 rounded bg-gray-200" />
+                            <div className="mt-3 h-8 w-full rounded bg-gray-200" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={loadMore}
+                        className="bouton-secondaire w-full min-h-11"
+                      >
+                        Voir plus
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Onglet Articles */}
+      {onglet === "articles" && (
+        <div className="flex flex-col gap-4">
+          {/* Filtre par type */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setTypeFiltre(null)}
+              aria-pressed={typeFiltre === null}
+              className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                typeFiltre === null ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+              }`}
+            >
+              Tout
+            </button>
+            {Object.entries(TYPE_LABELS).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTypeFiltre(key)}
+                aria-pressed={typeFiltre === key}
+                className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-medium transition ${
+                  typeFiltre === key ? "bg-[#4A6741] text-white" : "border border-bordure bg-white text-texte-doux"
+                }`}
+              >
+                {TYPE_ICONS[key]} {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Recherche articles */}
+          <input
+            type="search"
+            value={searchArticle}
+            onChange={(e) => setSearchArticle(e.target.value)}
+            placeholder="Rechercher un article…"
+            aria-label="Rechercher un article"
+            className="champ w-full rounded-full"
+          />
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredArticles.length === 0 ? (
+              <div className="col-span-full carte p-10 text-center">
+                <div className="text-4xl">🛍️</div>
+                <p className="mt-3 font-medium text-texte-doux">Aucun article ne correspond.</p>
+              </div>
+            ) : (
+              filteredArticles.map((a) => (
+                <article key={a.id} className="carte flex flex-col p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="text-2xl">{TYPE_ICONS[a.type] ?? "📦"}</span>
+                    <h3 className="font-semibold text-foreground">{a.nom}</h3>
+                  </div>
+                  {a.description && <p className="text-sm text-texte-doux">{a.description}</p>}
+                  <div className="mt-auto pt-3 flex items-center justify-between">
+                    <span className="text-sm font-medium text-[#4A6741]">
+                      {a.prix === 0 ? "Gratuit" : `${a.prix} jetons`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => acheter(a.id)}
+                      disabled={achatEnCours === a.id}
+                      className="bouton min-h-9 px-3 text-sm"
+                    >
+                      {achatEnCours === a.id ? "Achat…" : "Acheter"}
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modale Partager */}
       {dialogue?.type === "partager" && (
