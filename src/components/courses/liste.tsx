@@ -602,7 +602,7 @@ export default function ListeCourses({
 
       {/* FAB Ajouter */}
       {ajoutOuvert ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 bg-white p-4 shadow-lg">
+        <div className="carte p-4">
           <FormulaireArticle
             weekStart={weekStart}
             onFerme={() => setAjoutOuvert(false)}
@@ -618,7 +618,7 @@ export default function ListeCourses({
           }}
           disabled={pending !== null}
           aria-label="Ajouter un article"
-          className="fixed bottom-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[#4A6741] text-2xl text-white shadow-lg hover:bg-[#3a5533] active:scale-95 transition-transform"
+          className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#4A6741] text-2xl text-white shadow-lg hover:bg-[#3a5533] active:scale-95 transition-transform"
         >
           +
         </button>
