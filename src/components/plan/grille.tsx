@@ -93,9 +93,6 @@ export default function GrillePlan({
   return (
     <div>
       <div className="carte mb-4 flex flex-wrap items-center gap-3 p-4">
-        <span className="text-sm text-texte-doux">
-          Glisse une recette d&apos;une case à l&apos;autre, ou clique sur + pour remplir.
-        </span>
         {erreur && (
           <span role="status" aria-live="polite" className="text-sm text-danger">
             {erreur}
