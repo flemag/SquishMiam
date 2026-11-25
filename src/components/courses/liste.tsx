@@ -6,6 +6,7 @@ import { useMiamz } from "@/components/miamz/fournisseur";
 import { formatQuantite } from "@/lib/courses";
 import { RAYONS } from "@/lib/rayons";
 import FormulaireArticle from "@/components/courses/formulaire-article";
+import FeuilleModale from "@/components/ui/feuille-modale";
 
 type ItemVue = {
   id: string;
@@ -600,29 +601,36 @@ export default function ListeCourses({
         </section>
       )}
 
-      {/* FAB Ajouter */}
-      {ajoutOuvert ? (
-        <div className="carte p-4">
-          <FormulaireArticle
-            weekStart={weekStart}
-            onFerme={() => setAjoutOuvert(false)}
-            onAjoute={articleAjoute}
-          />
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            setMessage(null);
-            setAjoutOuvert(true);
-          }}
-          disabled={pending !== null}
-          aria-label="Ajouter un article"
-          className="fixed bottom-20 left-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#4A6741] text-2xl text-white shadow-lg hover:bg-[#3a5533] active:scale-95 transition-transform"
-        >
-          +
-        </button>
-      )}
+      {/* FAB Ajouter + Bottom Sheet */}
+      <FeuilleModale
+        ouvert={ajoutOuvert}
+        onFermer={() => setAjoutOuvert(false)}
+        titre="Ajouter un article"
+        footer={
+          <button type="button" onClick={() => setAjoutOuvert(false)} className="bouton min-h-11 w-full">
+            Fermer
+          </button>
+        }
+      >
+        <FormulaireArticle
+          weekStart={weekStart}
+          onFerme={() => setAjoutOuvert(false)}
+          onAjoute={articleAjoute}
+        />
+      </FeuilleModale>
+
+      <button
+        type="button"
+        onClick={() => {
+          setMessage(null);
+          setAjoutOuvert(true);
+        }}
+        disabled={pending !== null}
+        aria-label="Ajouter un article"
+        className="fixed bottom-20 left-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#4A6741] text-2xl text-white shadow-lg hover:bg-[#3a5533] active:scale-95 transition-transform"
+      >
+        +
+      </button>
     </div>
   );
 }
