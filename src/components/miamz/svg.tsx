@@ -15,6 +15,8 @@ export type MiamzSvgProps = {
   /** Shorthand CSS appliqué inline au groupe .miamz-anim (keyframes du compagnon). */
   animation?: string;
   className?: string;
+  /** Accessoire équipé (emoji + position: "tete" ou "corps"). */
+  accessoire?: { emoji: string; position: string } | null;
 };
 
 /** 1 unité de regard ≈ 4 unités SVG (le viewBox 200 est rendu petit). */
@@ -28,6 +30,7 @@ export default function MiamzSvg({
   variante = 0,
   animation,
   className,
+  accessoire = null,
 }: MiamzSvgProps) {
   const dx = yeux.dx * AMPLITUDE;
   const dy = yeux.dy * AMPLITUDE;
@@ -81,6 +84,18 @@ export default function MiamzSvg({
           strokeWidth="2.5"
           strokeLinejoin="round"
         />
+        {accessoire && (
+          <text
+            x={accessoire.position === "tete" ? 100 : 100}
+            y={accessoire.position === "tete" ? 22 : 135}
+            fontSize={accessoire.position === "tete" ? 28 : 22}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            style={{ userSelect: "none" }}
+          >
+            {accessoire.emoji}
+          </text>
+        )}
       </g>
     </svg>
   );

@@ -27,7 +27,13 @@ const graineMinute = () => Math.floor(Date.now() / MINUTE);
  * rebond + bulle contextuelle à la page (bullesPourChemin), sans toucher
  * au moteur d'humeur.
  */
-export default function Compagnon() {
+export default function Compagnon({
+  accessoireEmoji = null,
+  accessoirePosition = null,
+}: {
+  accessoireEmoji?: string | null;
+  accessoirePosition?: string | null;
+} = {}) {
   const miamz = useContext(MiamzContext);
   const pathname = usePathname();
   const [humeur, setHumeur] = useState<HumeurId>("content");
@@ -198,6 +204,7 @@ export default function Compagnon() {
                   variante={variante}
                   animation={animation}
                   className="h-14 w-14 sm:h-[4.5rem] sm:w-[4.5rem]"
+                  accessoire={accessoireEmoji ? { emoji: accessoireEmoji, position: accessoirePosition ?? "tete" } : null}
                 />
               </div>
             </button>
