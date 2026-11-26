@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { formatDateIso, formatJourFr, getWeekDates, SLOTS, SLOT_LABELS, weekStart } from "@/lib/plan";
 import GrillePlan from "@/components/plan/grille";
 import AnalyseMiamz from "@/components/miamz/analyse";
+import NutritionDashboard from "@/components/plan/nutrition-dashboard";
 
 export default async function PlanPage({
   searchParams,
@@ -33,7 +34,7 @@ export default async function PlanPage({
         servings: true,
         recipeId: true,
         order: true,
-        recipe: { select: { id: true, title: true } },
+        recipe: { select: { id: true, title: true, calories: true, proteines: true, glucides: true, lipides: true } },
       },
       orderBy: [{ date: "asc" }, { slot: "asc" }, { order: "asc" }],
     }),
@@ -46,13 +47,20 @@ export default async function PlanPage({
       where: { masquee: false },
       select: { id: true, nom: true },
     }).then((cats) => cats.sort((a, b) => a.nom.localeCompare(b.nom, "fr"))),
-    db.user.findUnique({ where: { id: userId }, select: { householdSize: true } }),
+    db.user.findUnique({ where: { id: userId }, select: { householdSize: true, goal: true } }),
   ]);
 
   const prev = new Date(debut);
   prev.setUTCDate(prev.getUTCDate() - 7);
   const next = new Date(debut);
   next.setUTCDate(next.getUTCDate() + 7);
+
+  const nutritionEntries = entries.map((e) => {
+    const nut = e.recipe.calories != null
+      ? { calories: e.recipe.calories, proteines: e.recipe.proteines ?? 0, glucides: e.recipe.glucides ?? 0, lipides: e.recipe.lipides ?? 0 }
+      : null;
+    return { date: e.date.toISOString().slice(0, 10), servings: e.servings, nutrition: nut };
+  });
 
   return (
     <main>
@@ -106,6 +114,10 @@ export default async function PlanPage({
           categories={categoriesTriees}
           portionsDefaut={profil?.householdSize ?? 1}
         />
+      )}
+
+      {recipes.length > 0 && (
+        <NutritionDashboard entries={nutritionEntries} goal={profil?.goal ?? "equilibre"} />
       )}
     </main>
   );
