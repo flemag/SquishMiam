@@ -75,6 +75,10 @@ model Recipe {
   publishedAt     DateTime?
   validatedAt     DateTime?
   boostedUntil    DateTime?
+  calories        Int?
+  proteines       Float?
+  glucides        Float?
+  lipides         Float?
   validationCount Int             @default(0)
   validators      String[]        // user IDs ayant validé
   sharedWith      String[]        // user IDs ayant ajouté à leurs recettes
